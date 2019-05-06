@@ -1,7 +1,12 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="StockTickerSparklines.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="apikey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">YH5RG5INKJN1HCXL</Value>
+    </Setting>
+    <Setting Name="apiEndpoint" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://www.alphavantage.co/query</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>

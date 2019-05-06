@@ -1,0 +1,4 @@
+﻿ApiFunction	ParameterName
+GLOBAL_QUOTE 	symbol
+SYMBOL_SEARCH	keywords
+TIME_SERIES_DAILY_ADJUSTED	symbol

@@ -1,0 +1,10 @@
+﻿JSON	VS
+1. symbol	_1symbol
+2. name	_2name
+3. type	_3type
+4. region	_4region
+5. marketOpen	_5marketOpen
+6. marketClose	_6marketClose
+7. timezone	_7timezone
+8. currency	_8currency
+9. matchScore	_9matchScore

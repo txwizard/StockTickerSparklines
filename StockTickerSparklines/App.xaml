@@ -20,7 +20,7 @@
 			<Setter Property="FontFamily" 
                     Value="Tahoma" />
 			<Setter Property="FontSize" 
-                    Value="24" />
+                    Value="14pt" />
             <Setter Property="HorizontalAlignment"
                     Value="Center" />
         </Style>
@@ -34,7 +34,7 @@
 			<Setter Property="Label.FontWeight" 
                     Value="Bold" />
 			<Setter Property="Label.FontSize" 
-                    Value="18" />
+                    Value="18pt" />
 			<Setter Property="Label.Foreground"
                     Value="#0066cc" />
 		</Style>
@@ -48,12 +48,29 @@
 			<Setter Property="FontWeight"
                     Value="Normal" />
 			<Setter Property="FontSize"
-                    Value="18" />
+                    Value="14pt" />
 			<Setter Property="Foreground"
                     Value="#000000" />
 		</Style>
 
-		<!-- Label style -->
+        <!-- Info text style -->
+        <Style x:Key="infoTextStyle"
+               TargetType="TextBox">
+            <Setter Property="HorizontalAlignment"
+                    Value="Left" />
+            <Setter Property="FontFamily"
+                    Value="Tahoma" />
+            <Setter Property="FontWeight"
+                    Value="Normal" />
+            <Setter Property="FontSize"
+                    Value="14pt" />
+            <Setter Property="Foreground"
+                    Value="#000000" />
+            <Setter Property="Background"
+                    Value="BurlyWood" />
+        </Style>
+
+        <!-- Label style -->
 		<Style x:Key="labelStyle" TargetType="{x:Type Label}">
 			<Setter Property="VerticalAlignment"
                     Value="Top" />

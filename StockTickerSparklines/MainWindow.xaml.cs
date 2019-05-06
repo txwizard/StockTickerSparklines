@@ -53,11 +53,12 @@ namespace StockTickerSparklines
             try
             {
                 StockTickerEngine tickerEngine = StockTickerEngine.GetTheSingleInstance ( );
-                TickerSymbolsCollection symbols = tickerEngine.Search ( txtSearchString.Text );
+                TickerSymbolMatches symbols = tickerEngine.Search ( txtSearchString.Text );
 
                 if ( symbols != null )
                 {
-                    this.txtMessage.Text = @"Symbols for you I have!";
+                    SymbolInfo [ ] symbolInfos = tickerEngine.GetSymbolInfos ( );
+                    this.txtMessage.Text = @"Symbols for you have I!";
                 }   // TRUE (anticpated outcome) block, if ( symbols != null )
                 else
                 {

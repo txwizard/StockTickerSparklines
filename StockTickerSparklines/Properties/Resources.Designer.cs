@@ -97,6 +97,15 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Order = {0}, Label = {1}.
+        /// </summary>
+        internal static string SYMBOLINFO_TOSTRING_TEMPLATE {
+            get {
+                return ResourceManager.GetString("SYMBOLINFO_TOSTRING_TEMPLATE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Function = {0}, Parameter = {1}.
         /// </summary>
         internal static string TPL_API_FUNCTION_MAP_TOSTRING {

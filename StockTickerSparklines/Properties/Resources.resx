@@ -133,6 +133,10 @@
     <value>An {0} Exception arose. Details follow.{5}{5}                        Message             = {1}{5}                        TargetSite (Method) = {2}{5}                        Source (Assembly)   = {3}{5}                        StackTrace          = {4}</value>
     <comment>The code behind the MinWindow form constructs exception reports for the trace logger from this template.</comment>
   </data>
+  <data name="SYMBOLINFO_TOSTRING_TEMPLATE" xml:space="preserve">
+    <value>Order = {0}, Label = {1}</value>
+    <comment>The ToString  override method on SymbolInfo uses this template to represent the property values; this is how they appear in a watch window.</comment>
+  </data>
   <data name="TPL_API_FUNCTION_MAP_TOSTRING" xml:space="preserve">
     <value>Function = {0}, Parameter = {1}</value>
     <comment>The ToString override method on FunctionMap uses this template to represent the property values; this is how they appear in a watch window.</comment>

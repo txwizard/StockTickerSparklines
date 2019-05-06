@@ -84,9 +84,8 @@
     </ApplicationDefinition>
     <Compile Include="RestClient.cs" />
     <Compile Include="StockTickerEngine.cs" />
-    <Compile Include="TickerSymbol.cs" />
+    <Compile Include="SymbolInfo.cs" />
     <Compile Include="TickerSymbolMatches.cs" />
-    <Compile Include="TickerSymbolsCollection.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

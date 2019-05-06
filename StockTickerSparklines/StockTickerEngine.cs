@@ -38,10 +38,10 @@ namespace StockTickerSparklines
         /// If the method succeeds, the return value is a TickerSymbolsCollection
         /// that contains at least one TickerSymbol object.
         /// </returns>
-        internal TickerSymbolsCollection Search ( string pstrQueryString )
+        internal TickerSymbolMatches Search ( string pstrQueryString )
         {
             // ToDo: Replace this body with that of GetSymbols, and delete that method.
-            TickerSymbolsCollection symbols = GetSymbols ( pstrQueryString );
+            TickerSymbolMatches symbols = GetSymbols ( pstrQueryString );
 
             if ( symbols != null )
             {
@@ -52,6 +52,12 @@ namespace StockTickerSparklines
                 return null;
             }   // FALSE (unanticipated outcome) block, if ( symbols != null )
         }   // internal TickerSymbolsCollection Search
+
+
+        public SymbolInfo [ ] GetSymbolInfos ( )
+        {
+            return _symbolInfo;
+        }   // public SymbolInfo [ ] GetSymbolInfos
 
 
         /// <summary>
@@ -66,7 +72,7 @@ namespace StockTickerSparklines
         /// If the method succeeds, the return value is a TickerSymbolsCollection
         /// that contains at least one TickerSymbol object.
         /// </returns>
-        private TickerSymbolsCollection GetSymbols ( string pstrQueryString )
+        private TickerSymbolMatches GetSymbols ( string pstrQueryString )
         {
             string strQueryString = BuildQueryString (
                 ApiFunction.SYMBOL_SEARCH ,
@@ -99,17 +105,27 @@ namespace StockTickerSparklines
                         @"The stock ticker API returned the following error message: {0}" ,
                         error.ErrorMessage ) );             // Format Item 0: the following error message: {0}
                 this.Message = error.ErrorMessage;
+                return null;
             }   // TRUE (unanticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
             else
             {
                 TraceLogger.WriteWithBothTimesLabeledLocalFirst ( @"The response looks good." );
-                _responseStringFixups = _responseStringFixups ?? new StringFixups ( LoadStringFixups ( @"SYMBOL_SEARCH_ResponseMasp" ) );
-                TickerSymbolMatches symbolMatches = Newtonsoft.Json.JsonConvert.DeserializeObject<TickerSymbolMatches> (
+
+                StringFixups.StringFixup [ ] stringFixups = LoadStringFixups ( @"SYMBOL_SEARCH_ResponseMasp" );
+                _responseStringFixups = _responseStringFixups ?? new StringFixups ( stringFixups );
+                _symbolInfo = _symbolInfo ?? new SymbolInfo [ stringFixups.Length ];
+
+                for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                          intJ < stringFixups.Length ;
+                          intJ++ )
+                {
+                    _symbolInfo [ intJ ] = new SymbolInfo ( stringFixups [ intJ ].OutputValue );
+                }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < stringFixups.Length ; intJ++ )
+
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<TickerSymbolMatches> (
                     _responseStringFixups.ApplyFixups (
                         strResponse ) );
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
-
-            return null;
         }   // private TickerSymbolsCollection GetSymbols method
 
 
@@ -302,10 +318,15 @@ namespace StockTickerSparklines
 
         private FunctionMapItem [ ] _map = null;
 
-
+  
         private RestClient _restClient = null;
 
+
         private StringFixups _responseStringFixups = null;
+
+
+        private SymbolInfo [ ] _symbolInfo = null;
+
 
         private class FunctionMapItem : IComparable<FunctionMapItem>
         {

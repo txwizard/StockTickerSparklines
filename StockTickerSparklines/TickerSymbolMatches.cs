@@ -102,5 +102,23 @@ namespace StockTickerSparklines
         {   // The Visual Studio JSON parser generated this as _9matchScore.
             get; set;
         }
+
+        public override string ToString ( )
+        {
+            return string.Format (
+                Properties.Resources.TPL_BESTMATCH_TOSTRING ,
+                new string [ ]
+                {
+                    _1symbol ,          // Format Item 0: _1symbol (Symbol) = {0}
+                    _2name ,            // Format Item 1: _2name (Name) = {1}
+                    _3type ,            // Format Item 2: _3type (Type) = {2}
+                    _4region ,          // Format Item 3: _4region (Region) = {3}
+                    _5marketOpen ,      // Format Item 4: _5marketOpen (Market Opening Time) = {4}
+                    _6marketClose ,     // Format Item 5: _6marketClose (Market Closing Time) = {5}
+                    _7timezone ,        // Format Item 6: _7timezone (Time Zone) = {6}
+                    _8currency ,        // Format Item 7: _8currency (Currency) = {7}
+                    _9matchScore        // Format Item 8: __9matchScore (Match Score) = {8}
+                } );
+        }
     }   // public class Bestmatch
 }   // partial namespace StockTickerSparklines

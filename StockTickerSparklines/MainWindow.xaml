@@ -62,11 +62,11 @@
                     HorizontalAlignment="Center"
                     Height="Auto"
                     Width="735">
-            <ss:GcSpreadSheet HorizontalAlignment="Left"
+            <ss:GcSpreadSheet x:Name="xlWork"
+                              HorizontalAlignment="Left"
                               Margin="18,10,0,0"
                               VerticalAlignment="Top"
                               Height="341" />
-
         </StackPanel>
 
         <!-- Message window -->

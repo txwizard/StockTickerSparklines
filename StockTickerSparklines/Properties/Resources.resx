@@ -141,6 +141,14 @@
     <value>Function = {0}, Parameter = {1}</value>
     <comment>The ToString override method on FunctionMap uses this template to represent the property values; this is how they appear in a watch window.</comment>
   </data>
+  <data name="TPL_BESTMATCH_TOSTRING" xml:space="preserve">
+    <value>_1symbol (Symbol) = {0}, _2name (Name) = {1}, _3type (Type) = {2}, _4region (Region) = {3}, _5marketOpen (Market Opening Time) = {4}, _6marketClose (Market Closing Time) = {5}, _7timezone (Time Zone) = {6}, _8currency (Currency) = {7}, __9matchScore (Match Score) = {8}</value>
+    <comment>The ToString override method on BestMatch this template to represent the property values; this is how they appear in a watch window.</comment>
+  </data>
+  <data name="TPL_INTERNAL_ERROR_001" xml:space="preserve">
+    <value>INTERNAL ERROR 001: Internal field counter intColIndex has an invalid value of {0}. Its value must always be less than {1}.</value>
+    <comment>The indicated exception uses this template to set its Message property.</comment>
+  </data>
   <data name="TPL_TICKER_SYMBOL_TOSTRING" xml:space="preserve">
     <value>Symbol = {0}, Issuer Name = {1}, Selected {2}</value>
     <comment>The ToString override method on TickerSymbol uses this template to represent the property values; this is how they appear in a watch window.</comment>

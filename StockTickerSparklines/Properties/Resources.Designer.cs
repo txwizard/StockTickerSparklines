@@ -115,6 +115,24 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _1symbol (Symbol) = {0}, _2name (Name) = {1}, _3type (Type) = {2}, _4region (Region) = {3}, _5marketOpen (Market Opening Time) = {4}, _6marketClose (Market Closing Time) = {5}, _7timezone (Time Zone) = {6}, _8currency (Currency) = {7}, __9matchScore (Match Score) = {8}.
+        /// </summary>
+        internal static string TPL_BESTMATCH_TOSTRING {
+            get {
+                return ResourceManager.GetString("TPL_BESTMATCH_TOSTRING", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to INTERNAL ERROR 001: Internal field counter intColIndex has an invalid value of {0}. Its value must always be less than {1}..
+        /// </summary>
+        internal static string TPL_INTERNAL_ERROR_001 {
+            get {
+                return ResourceManager.GetString("TPL_INTERNAL_ERROR_001", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Symbol = {0}, Issuer Name = {1}, Selected {2}.
         /// </summary>
         internal static string TPL_TICKER_SYMBOL_TOSTRING {

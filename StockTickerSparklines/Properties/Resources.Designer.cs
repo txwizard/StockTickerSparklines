@@ -140,5 +140,32 @@ namespace StockTickerSparklines.Properties {
                 return ResourceManager.GetString("TPL_TICKER_SYMBOL_TOSTRING", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disposition.
+        /// </summary>
+        internal static string XLS_R1_C1_LABEL {
+            get {
+                return ResourceManager.GetString("XLS_R1_C1_LABEL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Discard.
+        /// </summary>
+        internal static string XLS_ROW_DISP_DISCARD {
+            get {
+                return ResourceManager.GetString("XLS_ROW_DISP_DISCARD", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep.
+        /// </summary>
+        internal static string XLS_ROW_DISP_KEEP {
+            get {
+                return ResourceManager.GetString("XLS_ROW_DISP_KEEP", resourceCulture);
+            }
+        }
     }
 }

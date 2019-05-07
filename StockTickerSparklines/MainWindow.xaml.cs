@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using GrapeCity.Windows.SpreadSheet.Data;
+
 using WizardWrx;
 using WizardWrx.Core;
 
@@ -26,20 +28,25 @@ namespace StockTickerSparklines
         public MainWindow ( )
         {
             InitializeComponent ( );
- 
             this.Title = System.Reflection.Assembly.GetExecutingAssembly ( ).GetName ( ).Name;
-            this.txtSearchString.Focus ( );
         }   // public MainWindow default constructor
- 
- 
-        private void Button_Click ( object sender , RoutedEventArgs e )
-        {
-            MessageBox.Show (
-                @"Click!" ,
-                this.Title );
-        }   // private void Button_Click event delegate
 
- 
+
+        private void Window_ContentRendered ( object sender , EventArgs e )
+        {
+            //  ----------------------------------------------------------------
+            //  Until the ContentRendered event arises, you cannot set the focus
+            //  on a control that is part of said content. While simple windows
+            //  can get away with setting the focus on a control in their
+            //  constructors, the ContentRendered event delegate is a better
+            //  choice, since it is the last event that is raised before control
+            //  is relinquished to the user.
+            //  ----------------------------------------------------------------
+
+            this.txtSearchString.Focus ( );
+        }   // private void Window_ContentRendered event delegate
+
+
         private void TxtSearchString_TextChanged ( object sender , TextChangedEventArgs e )
         {
             TextBox textBox = sender as TextBox;
@@ -57,50 +64,7 @@ namespace StockTickerSparklines
 
                 if ( symbols != null )
                 {
-                    SymbolInfo [ ] symbolInfos = tickerEngine.GetSymbolInfos ( );
-
-                    //  --------------------------------------------------------
-                    //  Label the first nine columns.
-                    //  --------------------------------------------------------
-
-                    for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                              intColIndex < symbolInfos.Length ;
-                              intColIndex++ )
-                    {
-                        this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , intColIndex ].Value = symbolInfos [ intColIndex ].Label;
-                        this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , intColIndex ].FontWeight = FontWeights.Bold;
-                    }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
-
-                    //  --------------------------------------------------------
-                    //  Populate the detail rows.
-                    //  --------------------------------------------------------
-
-                    for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                              intRowIndex < symbols.bestMatches.Length ;
-                              intRowIndex++ )
-                    {
-                        for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                              intColIndex < symbolInfos.Length ;
-                              intColIndex++ )
-                        {
-                            PopulateRowFromSearchResult (
-                                symbols ,
-                                symbolInfos ,
-                                intRowIndex ,
-                                intColIndex );
-                        }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
-                    }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < symbols.bestMatches.Length ; intRowIndex++ )
-
-                    //  --------------------------------------------------------
-                    //  Auto-fit the column widths.
-                    //  --------------------------------------------------------
-
-                    for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                          intColIndex < symbolInfos.Length ;
-                          intColIndex++ )
-                    {
-                        this.xlWork.View.AutoFitColumn ( intColIndex );
-                    }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
+                    ShowSearchResults ( tickerEngine , symbols );
 
                     this.txtMessage.Text = @"Symbols for you have I!";
                 }   // TRUE (anticpated outcome) block, if ( symbols != null )
@@ -113,7 +77,9 @@ namespace StockTickerSparklines
             {
                 MessageBox.Show (
                     ex.Message ,
-                    Title );
+                    Title ,
+                    MessageBoxButton.OK ,
+                    MessageBoxImage.Exclamation );
                 this.txtMessage.Text = ex.Message;
                 TraceLogger.WriteWithBothTimesLabeledLocalFirst (
                     string.Format (
@@ -131,12 +97,122 @@ namespace StockTickerSparklines
         }   // private void CmdSearch_Click event delegate
 
 
+        private void ShowSearchResults (
+            StockTickerEngine ptickerEngine ,
+            TickerSymbolMatches psymbols )
+        {
+            //  ----------------------------------------------------------------
+            //  Put IntelliSense to work for me; defining these as constants
+            //  causes both IntelliSense and the C# compiler to flag things that
+            //  would otherwise by typographical errors that would go undetected
+            //  until runtime.
+            //  ----------------------------------------------------------------
+
+            const string FONT_FAMILY_TAHOMA = @"Tahoma";
+            const string THEME_NAME_MY_THEME = @"thmMyTheme";
+            const string THEME_TO_APPLY_HEADING = @"Headings";
+            const string THEME_TO_APPLY_BODY = @"Body";
+
+            SymbolInfo [ ] symbolInfos = ptickerEngine.GetSymbolInfos ( );
+
+            SpreadTheme theme = new SpreadTheme ( THEME_NAME_MY_THEME );
+
+            theme.BodyFontName = FONT_FAMILY_TAHOMA;
+            theme.HeadingFontName = FONT_FAMILY_TAHOMA;
+            theme.Colors.Accent1 = Color.FromArgb ( 255 , 255 , 0 , 0 );
+            theme.Colors.Accent2 = Color.FromArgb ( 255 , 0 , 255 , 0 );
+
+            var validChoices = DataValidator.CreateListValidator (
+                string.Concat (
+                    Properties.Resources.XLS_ROW_DISP_DISCARD ,
+                    SpecialCharacters.COMMA ,
+                    Properties.Resources.XLS_ROW_DISP_KEEP ) );
+
+            //  --------------------------------------------------------
+            //  The first column is reserved for marking selections to
+            //  be kept. Whereas worksheet cells in the Microsoft Excel
+            //  object model have ordinal numbers that start at one, the
+            //  GrapeCity control wisely treats them as a first class
+            //  array.
+            //  --------------------------------------------------------
+
+            this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value = Properties.Resources.XLS_R1_C1_LABEL;
+            this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , ArrayInfo.ARRAY_FIRST_ELEMENT ].FontTheme = THEME_TO_APPLY_HEADING;
+            this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , ArrayInfo.ARRAY_FIRST_ELEMENT ].FontWeight = FontWeights.Bold;
+            this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , ArrayInfo.ARRAY_FIRST_ELEMENT ].Locked = false;
+
+            //  --------------------------------------------------------
+            //  Label the next 9 columns, set the font weight to bold,
+            //  and protect the cells.
+            //  --------------------------------------------------------
+
+            for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intColIndex < symbolInfos.Length ;
+                      intColIndex++ )
+            {
+                int intAbsCol = ArrayInfo.OrdinalFromIndex ( intColIndex );
+
+                this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , intAbsCol ].Value = symbolInfos [ intColIndex ].Label;
+                this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , intAbsCol ].FontWeight = FontWeights.Bold;
+                this.xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , intAbsCol ].Locked = true;
+            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
+
+            //  --------------------------------------------------------
+            //  Populate the detail rows.
+            //  --------------------------------------------------------
+
+            for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intRowIndex < psymbols.bestMatches.Length ;
+                      intRowIndex++ )
+            {
+                int intAbsRow = ArrayInfo.OrdinalFromIndex ( intRowIndex );
+
+                this.xlWork.ActiveSheet.Cells [ intAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value = Properties.Resources.XLS_ROW_DISP_DISCARD;
+                this.xlWork.ActiveSheet.Cells [ intAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].FontTheme = THEME_TO_APPLY_BODY;
+                this.xlWork.ActiveSheet.Cells [ intAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].FontWeight = FontWeights.Normal;
+                this.xlWork.ActiveSheet.Cells [ intAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Locked = false;
+                this.xlWork.ActiveSheet.Cells [ intAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].DataValidator = validChoices;
+
+                for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intColIndex < symbolInfos.Length ;
+                      intColIndex++ )
+                {
+                    PopulateRowFromSearchResult (
+                        psymbols ,
+                        symbolInfos ,
+                        intRowIndex ,
+                        intColIndex );
+                }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
+            }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < symbols.bestMatches.Length ; intRowIndex++ )
+
+            //  --------------------------------------------------------
+            //  Auto-fit the column widths.
+            //  --------------------------------------------------------
+
+            for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                  intColIndex < symbolInfos.Length ;
+                  intColIndex++ )
+            {
+                this.xlWork.View.AutoFitColumn ( intColIndex );
+            }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
+
+            this.xlWork.ActiveSheet.Protect = true;
+        }   // private void ShowSearchResults
+
+
         private void PopulateRowFromSearchResult (
             TickerSymbolMatches psymbols ,
             SymbolInfo [ ] paSymbolInfos ,
             int pintRowIndex ,
             int pintColIndex )
         {
+            //  ----------------------------------------------------------------
+            //  Since the first column is reserved for the disposition choices,
+            //  subsequent columns are shifted right by one. Likewise, since the
+            //  first row is reserved for labels, the row index is also shifted,
+            //  down by one.
+            //  ----------------------------------------------------------------
+
             const int COL_IDX_SYMBOL = 0;
             const int COL_IDX_NAME = 1;
             const int COL_IDX_TYPE = 2;
@@ -152,9 +228,9 @@ namespace StockTickerSparklines
             //  ------------------------------------------------
             //  The column index determines which of the nine
             //  values in the BestMatches array goes into the
-            //  current column. As a matter of habit, I always
-            //  code for the default case, even when it should
-            //  never happen.
+            //  current column. As a matter of habit, I code for
+            //  the default case, even when it should never
+            //  happen.
             //  ------------------------------------------------
 
             switch ( pintColIndex )
@@ -188,12 +264,22 @@ namespace StockTickerSparklines
                     break;
                 default:
                     throw new InvalidOperationException ( string.Format (
-                        Properties.Resources.TPL_INTERNAL_ERROR_001 ,
-                        pintColIndex ,                           // Format Item 0: intColIndex has an invalid value of {0}.
-                        paSymbolInfos.Length ) );                 // Format Item 1: Its value must always be less than {1}.
+                        Properties.Resources.TPL_INTERNAL_ERROR_001 ,           // Format control string, pulled the language-neutral resources embedded into the assembly
+                        pintColIndex ,                                          // Format Item 0: intColIndex has an invalid value of {0}.
+                        paSymbolInfos.Length ) );                               // Format Item 1: Its value must always be less than {1}.
             }   // switch ( intColIndex )
 
-            this.xlWork.ActiveSheet.Cells [ ArrayInfo.OrdinalFromIndex ( pintRowIndex ) , pintColIndex ].Value = strCellValue;
+            //  ----------------------------------------------------------------
+            //  The correct value is in strCellValue; use it to set the Value
+            //  property, then protect the cell. Since they are used twice, both
+            //  offsets are computed and stored in local scratch variables.
+            //  ----------------------------------------------------------------
+
+            int intAbsRow = ArrayInfo.OrdinalFromIndex ( pintRowIndex );
+            int intAbsCol = ArrayInfo.OrdinalFromIndex ( pintColIndex );
+
+            this.xlWork.ActiveSheet.Cells [ intAbsRow , intAbsCol ].Value = strCellValue;
+            this.xlWork.ActiveSheet.Cells [ intAbsRow , intAbsCol ].Locked = true;
         }   // PopulateRowFromSearchResult
     }   // public partial class MainWindow
 }   // partial namespace StockTickerSparklines

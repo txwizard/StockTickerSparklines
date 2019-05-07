@@ -153,4 +153,16 @@
     <value>Symbol = {0}, Issuer Name = {1}, Selected {2}</value>
     <comment>The ToString override method on TickerSymbol uses this template to represent the property values; this is how they appear in a watch window.</comment>
   </data>
+  <data name="XLS_R1_C1_LABEL" xml:space="preserve">
+    <value>Disposition</value>
+    <comment>Label for origin cell</comment>
+  </data>
+  <data name="XLS_ROW_DISP_DISCARD" xml:space="preserve">
+    <value>Discard</value>
+    <comment>Initial text for column 1 of each row</comment>
+  </data>
+  <data name="XLS_ROW_DISP_KEEP" xml:space="preserve">
+    <value>Keep</value>
+    <comment>Replacement text for column 1 of each row</comment>
+  </data>
 </root>

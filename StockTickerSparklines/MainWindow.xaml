@@ -8,7 +8,8 @@
         mc:Ignorable="d"
         Title="MainWindow"
         Height="Auto"
-        Width="800">
+        Width="Auto"
+        ContentRendered="Window_ContentRendered" >
     <Grid x:Name="spnlSelector"
           Margin="10,10,10,10"
           Height="Auto">
@@ -59,9 +60,9 @@
                     Grid.Column="0"
                     Grid.Row="1"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="Left"
                     Height="Auto"
-                    Width="735">
+                    Width="Auto">
             <ss:GcSpreadSheet x:Name="xlWork"
                               HorizontalAlignment="Left"
                               Margin="18,10,0,0"

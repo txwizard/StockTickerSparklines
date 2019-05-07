@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StockTickerSparklines"
+        xmlns:const="clr-namespace:StockTickerSparklines.Properties"
         xmlns:ss="http://schemas.grapecity.com/windows/spreadsheet/2012"
         x:Class="StockTickerSparklines.MainWindow"
         mc:Ignorable="d"
@@ -24,9 +25,11 @@
             <RowDefinition Height="Auto" />
             <!-- Row Index = 2 -->
             <RowDefinition Height="Auto" />
+            <!-- Row Index = 3 -->
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Ticker Symbol Selection -->
+        <!-- Ticker Symbol Selection goes into column 0 of row 0. -->
 
         <StackPanel x:Name="stpTickerSymbolSelector"
                     Margin="10,10,10,10"
@@ -37,7 +40,8 @@
                     Height="Auto">
             <Label x:Name="lblSearchString"
                    Style="{StaticResource labelStyle}"
-                   Content="Ticker Symbol Search String" />
+                   Content="Ticker Symbol Search String"
+                   Margin="10,10,10,10" />
             <TextBox x:Name="txtSearchString"
                      Style="{StaticResource normalTextStyle}"
                      AcceptsReturn="False"
@@ -45,20 +49,50 @@
                      Width="100"
                      Height="Auto"
                      HorizontalScrollBarVisibility="Auto"
-                     TextChanged="TxtSearchString_TextChanged" />
+                     TextChanged="TxtSearchString_TextChanged"
+                     Margin="10,10,10,10" />
             <Button x:Name="cmdSearch"
                     Style="{StaticResource buttonStyle}"
                     Click="CmdSearch_Click"
                     IsEnabled="False"
-                    Content="Search" />
+                    Content="{x:Static const:Resources.BTN_LBL_SEARCH}" />
         </StackPanel>
 
-        <!-- Ticker Symbol Spreadsheet-->
+        <!-- Action buttons go into column 0 of row 1. -->
+
+        <StackPanel x:Name="stpActionButtons"
+                    Margin="10,10,10,10"
+                    Grid.Column="0"
+                    Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Height="Auto">
+            <Button x:Name="cmdPruneSelections"
+                    Style="{StaticResource buttonStyle}"
+                    Click="CmdPruneSelections_Click"
+                    IsEnabled="False"
+                    Content="{x:Static const:Resources.BTN_LBL_PRUNE}"
+                    Margin="10,10,10,10" />
+            <Button x:Name="cmdGetHistory"
+                    Style="{StaticResource buttonStyle}"
+                    Click="CmdGetHistory_Click"
+                    IsEnabled="False"
+                    Content="{x:Static const:Resources.BTN_LBL_HISTORY}"
+                    Margin="10,10,10,10" />
+            <Button x:Name="cmdResetForm"
+                    Style="{StaticResource buttonStyle}"
+                    Click="CmdResetForm_Click"
+                    IsEnabled="False"
+                    Content="{x:Static const:Resources.BTN_LBL_RESET}"
+                    Margin="10,10,10,10" />
+        </StackPanel>
+
+        <!-- Ticker Symbol Spreadsheet goes into column 0 of row 2. -->
 
         <StackPanel x:Name="stpSpreadsheet"
                     Margin="27,10,10,10"
                     Grid.Column="0"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Left"
                     Height="Auto"
@@ -70,12 +104,12 @@
                               Height="341" />
         </StackPanel>
 
-        <!-- Message window -->
+        <!-- Message window goes into column 0 of row 3. -->
 
         <StackPanel x:Name="stpMessages"
                     Margin="27,10,27,0"
                     Grid.Column="0"
-                    Grid.Row="2"
+                    Grid.Row="3"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
                     Height="Auto"
@@ -86,7 +120,7 @@
                      Height="Auto"
                      Margin="0,0,0,0"
                      TextWrapping="Wrap"
-                     Text="Enter search string."
+                     Text="{x:Static const:Resources.MSG_ENTER_SEARCH_STRING}"
                      VerticalAlignment="Top"
                      Width="700" />
         </StackPanel>

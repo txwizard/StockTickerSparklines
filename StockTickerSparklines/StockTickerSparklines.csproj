@@ -146,7 +146,7 @@
     <EmbeddedResource Include="SYMBOL_SEARCH_ResponseMasp.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="TIME_SERIES_DAILY_ResponseMap.txt" />
+    <EmbeddedResource Include="TIME_SERIES_DAILY_ResponseMap.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

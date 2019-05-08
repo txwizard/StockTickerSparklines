@@ -14,7 +14,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using GrapeCity.Windows.SpreadSheet.Data;
-using FarPoint.Win.Spread.Model;                            // The assembly lives in the Global Assembly Cache.
 
 using WizardWrx;
 using WizardWrx.Core;
@@ -89,62 +88,74 @@ namespace StockTickerSparklines
         private void CmdPruneSelections_Click ( object sender , RoutedEventArgs e )
         {
             string strKeepThisRow = Properties.Resources.XLS_ROW_DISP_KEEP;     // Save trips to the string table.
-
             bool fNewTopRow = false;
+            List<KeptRow> keptRows = new List<KeptRow> ( __intAbsLastRow );
 
-            for ( int intCurrAbsRow = _intAbsLastRow ;
+            for ( int intCurrAbsRow = __intAbsLastRow ;
                       intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ;
                       intCurrAbsRow-- )
             {   // Work the grid from the bottom up.
                 if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
                 {
-                    this.txtMessage.Text = string.Format (
-                        @"Keeping row {0} of {1}." ,
-                        ArrayInfo.OrdinalFromIndex ( intCurrAbsRow ) ,
-                        _intAbsLastRow );
+                    keptRows.Add ( new KeptRow ( __intAbsLastRow ) );
 
                     if ( fNewTopRow )
                     {
-                        FarPoint.Win.Spread.FpSpread spread = new FarPoint.Win.Spread.FpSpread ( );
-                        FarPoint.Win.Spread.SheetView sheet = spread.ActiveSheet;
-
-                        for ( int intThisRow = _intAbsLastRow - ArrayInfo.NEXT_INDEX ;
-                                  intThisRow > intCurrAbsRow ;
-                                  intThisRow-- )
+                        for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
+                                  intRowIndex > intCurrAbsRow ;
+                                  intRowIndex-- )
                         {   // Work from the top down.
-                            sheet.Rows [ intThisRow ].Remove ( );
-                        }   // for ( int intThisRow = _intAbsLastRow - ArrayInfo.NEXT_INDEX ; intThisRow > intCurrAbsRow ; intThisRow-- )
+                            ClearPopulatedCellsInRow ( intRowIndex );
+                        }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
                     }   // TRUE (Rows to keep lie above the current row.) block, if ( fNewTopRow )
                     else
                     {
-                        for ( int intCurrRowToDiscard = _intAbsLastRow ;
-                                  intCurrRowToDiscard > intCurrAbsRow ;
-                                  intCurrRowToDiscard-- )
+                        for ( int intRowIndex = __intAbsLastRow ;
+                                  intRowIndex > intCurrAbsRow ;
+                                  intRowIndex-- )
                         {
-                            ClearPopulatedCellsInRow ( intCurrAbsRow );
-                        }   // for ( int intCurrRowToDiscard = _intAbsLastRow ; intCurrRowToDiscard > intCurrAbsRow ; intCurrRowToDiscard-- )
+                            ClearPopulatedCellsInRow ( intRowIndex );
+                        }   // for ( int intRowIndex = __intAbsLastRow ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
 
                         fNewTopRow = true;
                     }   // FALSE (Working form the bottom, this is the first row marked for retention.) block, if ( fNewTopRow )
 
-                    _intAbsLastRow = intCurrAbsRow;
+                    __intAbsLastRow = intCurrAbsRow;
                 }   // if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
-            }   // for ( int intCurrAbsRow = _intAbsLastRow ; intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrAbsRow-- )
+            }   // for ( int intCurrAbsRow = __intAbsLastRow ; intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrAbsRow-- )
 
+            //  ----------------------------------------------------------------
+            //  Process the last group of discarded rows.
             //  ----------------------------------------------------------------
 
             if ( fNewTopRow )
             {
-                FarPoint.Win.Spread.FpSpread spread = new FarPoint.Win.Spread.FpSpread ( );
-                FarPoint.Win.Spread.SheetView sheet = spread.ActiveSheet;
-
-                for ( int intThisRow = _intAbsLastRow - ArrayInfo.NEXT_INDEX ;
-                          intThisRow > _intAbsLastRow ;
-                          intThisRow-- )
+                for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
+                          intRowIndex > ArrayInfo.ARRAY_INVALID_INDEX ;
+                          intRowIndex-- )
                 {   // Work from the top down.
-                    sheet.Rows [ intThisRow ].Remove ( );
-                }   // for ( int intThisRow = _intAbsLastRow - ArrayInfo.NEXT_INDEX ; intThisRow > _intAbsLastRow ; intThisRow-- )
+                    ClearPopulatedCellsInRow ( intRowIndex );
+                }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > ArrayInfo.ARRAY_INVALID_INDEX ; intRowIndex-- )
             }   // if ( fNewTopRow )
+
+            if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+            {   // The list issn't empty.
+                if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
+                {   // Since the index of the first item kept is greater than the length of the list, at least one item must be moved.
+                    keptRows.Sort ( );
+
+                    for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                              intRowIndex < keptRows.Count ;
+                              intRowIndex++ )
+                    {
+                        MovePopulatedRow (
+                            keptRows [ intRowIndex ].RowIndex ,
+                            intRowIndex ,
+                            __intAbsLastCol ,
+                            xlWork.ActiveSheet.Cells );
+                    }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < keptRows.Count ; intRowIndex++ )
+                }   // if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
+            }   // if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
 
             cmdGetHistory.IsEnabled = true;
             cmdPruneSelections.IsEnabled = false;
@@ -167,13 +178,13 @@ namespace StockTickerSparklines
                 txtSearchString.Text = SpecialStrings.EMPTY_STRING;
 
                 for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                          intRowIndex <= _intAbsLastRow ;
+                          intRowIndex <= __intAbsLastRow ;
                           intRowIndex++ )
                 {
                     ClearPopulatedCellsInRow ( intRowIndex );
-                }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex <= _intAbsLastRow ; intRowIndex++ )
+                }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex <= __intAbsLastRow ; intRowIndex++ )
 
-                _intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
+                __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
                 __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
 
                 cmdGetHistory.IsEnabled = false;
@@ -189,12 +200,32 @@ namespace StockTickerSparklines
         private void ClearPopulatedCellsInRow ( int pintRowIndex )
         {
             for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                      intColIndex <= _intAbsLastRow ;
+                      intColIndex <= __intAbsLastCol ;
                       intColIndex++ )
             {
                 xlWork.ActiveSheet.Cells [ pintRowIndex , intColIndex ].Value = null;
-            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= _intAbsLastRow ; intColIndex++ )
+            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= __intAbsLastCol ; intColIndex++ )
         }   // ClearPopulatedCellsInRow
+
+
+
+        private void MovePopulatedRow (
+            int pintSourceRowIndex ,
+            int pintDestinationRowIndex ,
+            int pintAbsLastCol ,
+            Cells pcells )
+        {
+            if ( pintSourceRowIndex > pintDestinationRowIndex )
+            {
+                for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                          intColIndex <= pintAbsLastCol ;
+                          intColIndex++ )
+                {
+                    pcells [ pintDestinationRowIndex , intColIndex ].Value = pcells [ pintSourceRowIndex , intColIndex ].Value;
+                    pcells [ pintSourceRowIndex , intColIndex ].Value = null;
+                }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= pintAbsLastCol ; intColIndex++ )
+            }   // if ( pintSourceRowIndex > pintDestinationRowIndex )
+        }   // private void MovePopulatedRow
 
 
         private void PopulateRowFromSearchResult (
@@ -283,15 +314,15 @@ namespace StockTickerSparklines
             //  last row and column in the worksheet grid.
             //  ----------------------------------------------------------------
 
-            if ( intAbsRow > _intAbsLastRow )
+            if ( intAbsRow > __intAbsLastRow )
             {
-                _intAbsLastRow = intAbsRow;
-            }   // if ( intAbsRow > _intAbsLastRow )
+                __intAbsLastRow = intAbsRow;
+            }   // if ( intAbsRow > __intAbsLastRow )
 
             if ( intAbsCol > __intAbsLastCol )
             {
                 __intAbsLastCol = intAbsCol;
-            }   // if ( intAbsRow > _intAbsLastRow )
+            }   // if ( intAbsRow > __intAbsLastRow )
         }   // PopulateRowFromSearchResult
 
 
@@ -423,5 +454,56 @@ namespace StockTickerSparklines
 
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
+
+
+        private class KeptRow :IComparable<KeptRow>
+        {
+            private KeptRow ( )
+            {
+            }   // KeptRow constructor 1 of 2 is marked private, to force construction of initialized instances,
+
+
+            public KeptRow ( int pintRowIndex )
+            {
+                RowIndex = pintRowIndex;
+            }   // KeptRow constructor 2 of 2 is marked public, and its argument initializes the sole property of the class.
+
+
+            public int RowIndex
+            {
+                get; private set;
+            }   // public int RowIndex, a read-only property set by the only visible constructor
+
+
+            public override bool Equals ( object obj )
+            {
+                KeptRow kept = obj as KeptRow;
+                return RowIndex.Equals ( Invert ( kept.RowIndex ) );
+            }   // public override bool Equals
+
+
+            public override int GetHashCode ( )
+            {
+                return Invert ( RowIndex ).GetHashCode ( );
+            }   // public override int GetHashCode
+
+
+            public override string ToString ( )
+            {
+                return RowIndex.ToString ( );
+            }   // public override string ToString
+
+
+            int IComparable<KeptRow>.CompareTo ( KeptRow other )
+            {
+                return RowIndex.CompareTo ( Invert ( other.RowIndex ) );
+            }   // int IComparable<KeptRow>.CompareTo
+
+
+            private static int Invert ( int pintInput )
+            {
+                return pintInput * MagicNumbers.MINUS_ONE;
+            }   // private static int Invert
+        }   // private class KeptRow
     }   // public partial class MainWindow
 }   // partial namespace StockTickerSparklines

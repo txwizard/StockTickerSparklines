@@ -151,11 +151,29 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to History acquired for specified issues.
+        /// </summary>
+        public static string MSG_HAVE_HISTORY {
+            get {
+                return ResourceManager.GetString("MSG_HAVE_HISTORY", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to List pruned, ready to get history?.
         /// </summary>
         public static string MSG_LIST_PRUNED {
             get {
                 return ResourceManager.GetString("MSG_LIST_PRUNED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Matching symbols found.
+        /// </summary>
+        public static string MSG_SYMBOLS_FOUND {
+            get {
+                return ResourceManager.GetString("MSG_SYMBOLS_FOUND", resourceCulture);
             }
         }
         

@@ -93,6 +93,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DailyTimeSeriesResponse.cs" />
     <Compile Include="RestClient.cs" />
     <Compile Include="StockTickerEngine.cs" />
     <Compile Include="SymbolInfo.cs" />
@@ -143,6 +144,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SYMBOL_SEARCH_ResponseMasp.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="TIME_SERIES_DAILY_ResponseMap.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

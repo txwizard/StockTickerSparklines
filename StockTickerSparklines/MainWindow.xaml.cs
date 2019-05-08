@@ -26,13 +26,16 @@ namespace StockTickerSparklines
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Constructor
         public MainWindow ( )
         {
             InitializeComponent ( );
             this.Title = System.Reflection.Assembly.GetExecutingAssembly ( ).GetName ( ).Name;
         }   // public MainWindow default constructor
+        #endregion  // Constructor
 
 
+        #region Event Delegates
         private void Window_ContentRendered ( object sender , EventArgs e )
         {
             //  ----------------------------------------------------------------
@@ -69,7 +72,7 @@ namespace StockTickerSparklines
                         tickerEngine ,
                         symbols );
 
-                    this.txtMessage.Text = @"Symbols for you have I!";
+                    this.txtMessage.Text = Properties.Resources.MSG_SYMBOLS_FOUND;
                     cmdPruneSelections.IsEnabled = true;
                     cmdResetForm.IsEnabled = true;
                 }   // TRUE (anticpated outcome) block, if ( symbols != null )
@@ -87,91 +90,13 @@ namespace StockTickerSparklines
 
         private void CmdPruneSelections_Click ( object sender , RoutedEventArgs e )
         {
-            string strKeepThisRow = Properties.Resources.XLS_ROW_DISP_KEEP;     // Save trips to the string table.
-            bool fNewTopRow = false;
-            List<KeptRow> keptRows = new List<KeptRow> ( __intAbsLastRow );
-
-            for ( int intCurrAbsRow = __intAbsLastRow ;
-                      intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                      intCurrAbsRow-- )
-            {   // Work the grid from the bottom up.
-                if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
-                {
-                    keptRows.Add ( new KeptRow ( intCurrAbsRow ) );
-
-                    if ( fNewTopRow )
-                    {
-                        for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
-                                  intRowIndex > intCurrAbsRow ;
-                                  intRowIndex-- )
-                        {   // Work from the top down.
-                            ClearPopulatedCellsInRow ( intRowIndex );
-                        }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
-                    }   // TRUE (Rows to keep lie above the current row.) block, if ( fNewTopRow )
-                    else
-                    {
-                        for ( int intRowIndex = __intAbsLastRow ;
-                                  intRowIndex > intCurrAbsRow ;
-                                  intRowIndex-- )
-                        {
-                            ClearPopulatedCellsInRow ( intRowIndex );
-                        }   // for ( int intRowIndex = __intAbsLastRow ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
-
-                        fNewTopRow = true;
-                    }   // FALSE (Working form the bottom, this is the first row marked for retention.) block, if ( fNewTopRow )
-
-                    __intAbsLastRow = intCurrAbsRow;
-                }   // if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
-            }   // for ( int intCurrAbsRow = __intAbsLastRow ; intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrAbsRow-- )
-
-            //  ----------------------------------------------------------------
-            //  Process the last group of discarded rows.
-            //  ----------------------------------------------------------------
-
-            if ( fNewTopRow )
-            {
-                for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
-                          intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                          intRowIndex-- )
-                {   // Work from the top down.
-                    ClearPopulatedCellsInRow ( intRowIndex );
-                }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex-- )
-            }   // if ( fNewTopRow )
-
-            if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
-            {   // The list issn't empty.
-                if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
-                {   // Since the index of the first item kept is greater than the length of the list, at least one item must be moved.
-                    keptRows.Sort ( );
-
-                    for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                              intRowIndex < keptRows.Count ;
-                              intRowIndex++ )
-                    {
-                        MovePopulatedRow (
-                            keptRows [ intRowIndex ].RowIndex ,
-                            ArrayInfo.OrdinalFromIndex ( intRowIndex ) ,
-                            __intAbsLastCol ,
-                            xlWork.ActiveSheet.Cells );
-                    }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < keptRows.Count ; intRowIndex++ )
-                }   // if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
-
-                __intAbsLastRow = keptRows.Count;
-            }   // TRUE (anticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
-            else
-            {
-                __intAbsLastRow = ArrayInfo.ARRAY_SECOND_ELEMENT;
-            }   // FALSE (unanticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
-
-            cmdGetHistory.IsEnabled = true;
-            cmdPruneSelections.IsEnabled = false;
-            txtMessage.Text = Properties.Resources.MSG_LIST_PRUNED;
+            PruneSymbolsList ( );
         }   // CmdPruneSelections_Click event delegate
 
 
         private void CmdGetHistory_Click ( object sender , RoutedEventArgs e )
         {
-
+            GetHistoryForSelectedSymbols ( );
         }   // CmdGetHistory_Click event delegate
 
 
@@ -202,8 +127,10 @@ namespace StockTickerSparklines
                 txtSearchString.Focus ( );
             }   // if ( MessageBox.Show ( Properties.Resources.MSG_ARE_YOU_SURE , Title , MessageBoxButton.YesNo , MessageBoxImage.Question ) == MessageBoxResult.Yes )
         }   // CmdResetForm_Click event delegate
+        #endregion  // Event Delegates
 
 
+        #region Private Worker Methods
         private void ClearPopulatedCellsInRow ( int pintRowIndex )
         {
             for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
@@ -214,6 +141,82 @@ namespace StockTickerSparklines
             }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= __intAbsLastCol ; intColIndex++ )
         }   // ClearPopulatedCellsInRow
 
+
+        private void GetHistoryForSelectedSymbols ( )
+        {
+            const int SYMBOL_COLUMN = 1;
+
+            try
+            {
+                for ( int intCurrRow = ArrayInfo.ARRAY_SECOND_ELEMENT ;
+                          intCurrRow <= __intAbsLastRow ;
+                          intCurrRow++ )
+                {
+                    GetHistoryForSymbol (
+                        xlWork.ActiveSheet.Cells [ intCurrRow , SYMBOL_COLUMN ].Text ,
+                        intCurrRow ,
+                        __intAbsLastCol );
+                }   // for ( int intCurrRow = ArrayInfo.ARRAY_SECOND_ELEMENT ; intCurrRow <= __intAbsLastRow ; intCurrRow++ )
+            }
+            catch ( Exception ex )
+            {
+                ReportException ( ex );
+            }   // catch ( Exception ex )
+        }   // private void GetHistoryForSelectedSymbols
+
+
+        private void GetHistoryForSymbol (
+            string pstrSymbol ,
+            int pintCurrRow ,
+            int pintAbsLastCol )
+        {
+            StockTickerEngine tickerEngine = StockTickerEngine.GetTheSingleInstance ( );
+
+            string strQueryString = StockTickerEngine.BuildQueryString (
+                StockTickerEngine.ApiFunction.TIME_SERIES_DAILY_ADJUSTED ,
+                pstrSymbol );
+            RestClient _restClient = new RestClient (
+                Properties.Settings.Default.apiEndpoint ,
+                RestClient.HttpVerb.Get ,
+                RestClient.ContentType.JSON );
+            string strResponse = _restClient.MakeRequest ( strQueryString );
+
+            TraceLogger.WriteWithBothTimesLabeledLocalFirst (
+                string.Format (
+                    @"JSON response returned by API:{1}{1}{0}" ,
+                    strResponse ,
+                    Environment.NewLine ) );
+
+            if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
+            {
+                RestClient.ErrorResponse error = Newtonsoft.Json.JsonConvert.DeserializeObject<RestClient.ErrorResponse> (
+                    strResponse.ApplyFixups (
+                        new StringFixups.StringFixup [ ]
+                        {
+                            new StringFixups.StringFixup (
+                                @"Error Message" ,          // Replace this ...
+                                @"ErrorMessage" )           // ... with this
+                        } ) );
+
+                TraceLogger.WriteWithBothTimesLabeledLocalFirst (
+                    string.Format (
+                        @"The stock ticker API returned the following error message: {0}" ,
+                        error.ErrorMessage ) );             // Format Item 0: the following error message: {0}
+                txtMessage.Text = error.ErrorMessage;
+            }   // TRUE (unanticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
+            else
+            {
+                TraceLogger.WriteWithBothTimesLabeledLocalFirst ( @"The response looks good." );
+                StringFixups.StringFixup [ ] stringFixups = StockTickerEngine.LoadStringFixups (
+                    @"TIME_SERIES_DAILY_ResponseMap" );
+                StringFixups responseStringFixups = new StringFixups (
+                    stringFixups );
+                DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
+                    responseStringFixups.ApplyFixups (
+                        strResponse ) );
+                txtMessage.Text = Properties.Resources.MSG_HAVE_HISTORY;
+            }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
+        }   // private void GetHistoryForSymbol
 
 
         private void MovePopulatedRow (
@@ -330,7 +333,91 @@ namespace StockTickerSparklines
             {
                 __intAbsLastCol = intAbsCol;
             }   // if ( intAbsRow > __intAbsLastRow )
-        }   // PopulateRowFromSearchResult
+        }   // private void PopulateRowFromSearchResult method
+
+
+        private void PruneSymbolsList ( )
+        {
+            string strKeepThisRow = Properties.Resources.XLS_ROW_DISP_KEEP;     // Save trips to the string table.
+            bool fNewTopRow = false;
+            List<KeptRow> keptRows = new List<KeptRow> ( __intAbsLastRow );
+
+            for ( int intCurrAbsRow = __intAbsLastRow ;
+                      intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intCurrAbsRow-- )
+            {   // Work the grid from the bottom up.
+                if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
+                {
+                    keptRows.Add ( new KeptRow ( intCurrAbsRow ) );
+
+                    if ( fNewTopRow )
+                    {
+                        for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
+                                  intRowIndex > intCurrAbsRow ;
+                                  intRowIndex-- )
+                        {   // Work from the top down.
+                            ClearPopulatedCellsInRow ( intRowIndex );
+                        }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
+                    }   // TRUE (Rows to keep lie above the current row.) block, if ( fNewTopRow )
+                    else
+                    {
+                        for ( int intRowIndex = __intAbsLastRow ;
+                                  intRowIndex > intCurrAbsRow ;
+                                  intRowIndex-- )
+                        {
+                            ClearPopulatedCellsInRow ( intRowIndex );
+                        }   // for ( int intRowIndex = __intAbsLastRow ; intRowIndex > intCurrAbsRow ; intRowIndex-- )
+
+                        fNewTopRow = true;
+                    }   // FALSE (Working form the bottom, this is the first row marked for retention.) block, if ( fNewTopRow )
+
+                    __intAbsLastRow = intCurrAbsRow;
+                }   // if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
+            }   // for ( int intCurrAbsRow = __intAbsLastRow ; intCurrAbsRow > ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrAbsRow-- )
+
+            //  ----------------------------------------------------------------
+            //  Process the last group of discarded rows.
+            //  ----------------------------------------------------------------
+
+            if ( fNewTopRow )
+            {
+                for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
+                          intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                          intRowIndex-- )
+                {   // Work from the top down.
+                    ClearPopulatedCellsInRow ( intRowIndex );
+                }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex-- )
+            }   // if ( fNewTopRow )
+
+            if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+            {   // The list issn't empty.
+                if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
+                {   // Since the index of the first item kept is greater than the length of the list, at least one item must be moved.
+                    keptRows.Sort ( );
+
+                    for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                              intRowIndex < keptRows.Count ;
+                              intRowIndex++ )
+                    {
+                        MovePopulatedRow (
+                            keptRows [ intRowIndex ].RowIndex ,
+                            ArrayInfo.OrdinalFromIndex ( intRowIndex ) ,
+                            __intAbsLastCol ,
+                            xlWork.ActiveSheet.Cells );
+                    }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < keptRows.Count ; intRowIndex++ )
+                }   // if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
+
+                __intAbsLastRow = keptRows.Count;
+            }   // TRUE (anticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+            else
+            {
+                __intAbsLastRow = ArrayInfo.ARRAY_SECOND_ELEMENT;
+            }   // FALSE (unanticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+
+            cmdGetHistory.IsEnabled = true;
+            cmdPruneSelections.IsEnabled = false;
+            txtMessage.Text = Properties.Resources.MSG_LIST_PRUNED;
+        }   // private void PruneSymbolsList method
 
 
         private void ReportException ( Exception pexAllKinds )
@@ -457,13 +544,17 @@ namespace StockTickerSparklines
 
             this.xlWork.ActiveSheet.Protect = true;
         }   // private void ShowSearchResults
+        #endregion  // Private Worker Methods
 
-
+  
+        #region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
+        #endregion  // Private Custom Instance Storage
 
 
-        private class KeptRow :IComparable<KeptRow>
+        #region Nested Private Classes
+        private class KeptRow : IComparable<KeptRow>
         {
             private KeptRow ( )
             {
@@ -512,5 +603,6 @@ namespace StockTickerSparklines
                 return pintInput * MagicNumbers.MINUS_ONE;
             }   // private static int Invert
         }   // private class KeptRow
+        #endregion  // Nested Private Classes
     }   // public partial class MainWindow
 }   // partial namespace StockTickerSparklines

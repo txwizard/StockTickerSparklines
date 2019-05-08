@@ -11,7 +11,7 @@ namespace StockTickerSparklines
 {
     class StockTickerEngine : GenericSingletonBase<StockTickerEngine>
     {
-        enum ApiFunction
+        public enum ApiFunction
         {
             GLOBAL_QUOTE,
             SYMBOL_SEARCH,
@@ -23,6 +23,122 @@ namespace StockTickerSparklines
         {
             get; private set;
         }   // public string Message property (read-only)
+
+
+        /// <summary>
+        /// Assemble the query string required to make a request to the stock
+        /// ticker service.
+        /// </summary>
+        /// <param name="penmApiFunction">
+        /// Each supported function is mapped to a member of the ApiFunction
+        /// enumeration, which does double duty, cast to an integer, as the
+        /// subscript into the _map array that looks up the corresponding
+        /// ParameterName string to pair with the <paramref name="pstrParameterValue"/>
+        /// string.
+        /// </param>
+        /// <param name="pstrParameterValue">
+        /// The value specified in this string is the value that is paired with
+        /// the parameter named that is mapped to the specified
+        /// <paramref name="penmApiFunction"/> value.
+        /// </param>
+        /// <returns>
+        /// The return value is the query string to submit to the single API
+        /// endpoint.
+        /// </returns>
+        internal static string BuildQueryString (
+            ApiFunction penmApiFunction ,
+            string pstrParameterValue )
+        {
+            // Template:    ?function=SYMBOL_SEARCH&keywords=BA&apikey=YH5RG5INKJN1HCXL
+
+            _map = _map ?? LoadMap ( );
+
+            RestClient.QueryStringBuilder queryStringBuilder = new RestClient.QueryStringBuilder ( );
+
+            FunctionMapItem mapItem = _map [ ( int ) penmApiFunction ];
+            queryStringBuilder.AddParameter (
+                @"function" ,
+                mapItem.function.ToString ( ) );
+            queryStringBuilder.AddParameter (
+                mapItem.parameter ,
+                pstrParameterValue );
+            queryStringBuilder.AddParameter (
+                @"apikey" ,
+                Properties.Settings.Default.apikey );
+
+            return queryStringBuilder.GetQueryString ( );
+        }   // internal string BuildQueryString method
+
+
+        internal static StringFixups.StringFixup [ ] LoadStringFixups ( string pstrEmbeddedResourceName )
+        {
+            const string LABEL_ROW = @"JSON	VS";
+            const string TSV_EXTENSION = @".txt";
+
+            const int STRING_PER_RESPONSE = ArrayInfo.ARRAY_FIRST_ELEMENT;
+            const int STRING_FOR_JSONCONVERTER = STRING_PER_RESPONSE + ArrayInfo.NEXT_INDEX;
+            const int EXPECTED_FIELD_COUNT = STRING_FOR_JSONCONVERTER + ArrayInfo.NEXT_INDEX;
+
+            string strEmbeddResourceFileName = string.Concat (
+                pstrEmbeddedResourceName ,
+                TSV_EXTENSION );
+            string [ ] astrAllMapItems = Readers.LoadTextFileFromEntryAssembly ( strEmbeddResourceFileName );
+            Parser parser = new Parser (
+                CSVParseEngine.DelimiterChar.Tab ,
+                CSVParseEngine.GuardChar.DoubleQuote ,
+                CSVParseEngine.GuardDisposition.Strip );
+            StringFixups.StringFixup [ ] rFunctionMaps = new StringFixups.StringFixup [ ArrayInfo.IndexFromOrdinal ( astrAllMapItems.Length ) ];
+
+            for ( int intI = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intI < astrAllMapItems.Length ;
+                      intI++ )
+            {
+                if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
+                {
+                    if ( astrAllMapItems [ intI ] != LABEL_ROW )
+                    {
+                        throw new Exception (
+                            string.Format (
+                                Properties.Resources.ERRMSG_CORRUPTED_EMBBEDDED_RESOURCE_LABEL ,
+                                new string [ ]
+                                {
+                                    strEmbeddResourceFileName ,                 // Format Item 0: internal resource {0}
+                                    LABEL_ROW ,                                 // Format Item 1: Expected value = {1}
+                                    astrAllMapItems [ intI ] ,                  // Format Item 2: Actual value   = {2}
+                                    Environment.NewLine                         // Format Item 3: Platform-specific newline
+                                } ) );
+                    }   // if ( astrAllMapItems[intI] != LABEL_ROW )
+                }   // TRUE (label row sanity check 1 of 2) block, if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
+                else
+                {
+                    string [ ] astrFields = parser.Parse ( astrAllMapItems [ intI ] );
+
+                    if ( astrFields.Length == EXPECTED_FIELD_COUNT )
+                    {
+                        rFunctionMaps [ ArrayInfo.IndexFromOrdinal ( intI ) ] = new StringFixups.StringFixup (
+                            astrFields [ STRING_PER_RESPONSE ] ,
+                            astrFields [ STRING_FOR_JSONCONVERTER ] );
+                    }   // TRUE (anticipated outcome) block, if ( astrFields.Length == EXPECTED_FIELD_COUNT )
+                    else
+                    {
+                        throw new Exception (
+                            string.Format (
+                                Properties.Resources.ERRMSG_CORRUPTED_EMBEDDED_RESOURCE_DETAIL ,
+                                new object [ ]
+                                {
+                                    intI ,                                      // Format Item 0: Detail record {0}
+                                    strEmbeddResourceFileName ,                 // Format Item 1: internal resource {1}
+                                    EXPECTED_FIELD_COUNT ,                      // Format Item 2: Expected field count = {2}
+                                    astrFields.Length ,                         // Format Item 3: Actual field count   = {3}
+                                    astrAllMapItems [ intI ] ,                  // Format Item 4: Actual record        = {4}
+                                    Environment.NewLine                         // Format Item 5: Platform-specific newline
+                                } ) );
+                    }   // FALSE (unanticipated outcome) block, if ( astrFields.Length == EXPECTED_FIELD_COUNT )
+                }   // FALSE (detail row) block, if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
+            }   // for ( int intI = ArrayInfo.ARRAY_FIRST_ELEMENT ; intI < astrAllMapItems.Length ; intI++ )
+
+            return rFunctionMaps;
+        }   // internal StringFixups.StringFixup [ ] GetSStringFixups
 
 
         /// <summary>
@@ -54,10 +170,10 @@ namespace StockTickerSparklines
         }   // internal TickerSymbolsCollection Search
 
 
-        public SymbolInfo [ ] GetSymbolInfos ( )
+        internal SymbolInfo [ ] GetSymbolInfos ( )
         {
             return _symbolInfo;
-        }   // public SymbolInfo [ ] GetSymbolInfos
+        }   // internal SymbolInfo [ ] GetSymbolInfos
 
 
         /// <summary>
@@ -127,51 +243,6 @@ namespace StockTickerSparklines
                         strResponse ) );
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private TickerSymbolsCollection GetSymbols method
-
-
-        /// <summary>
-        /// Assemble the query string required to make a request to the stock
-        /// ticker service.
-        /// </summary>
-        /// <param name="penmApiFunction">
-        /// Each supported function is mapped to a member of the ApiFunction
-        /// enumeration, which does double duty, cast to an integer, as the
-        /// subscript into the _map array that looks up the corresponding
-        /// ParameterName string to pair with the <paramref name="pstrParameterValue"/>
-        /// string.
-        /// </param>
-        /// <param name="pstrParameterValue">
-        /// The value specified in this string is the value that is paired with
-        /// the parameter named that is mapped to the specified
-        /// <paramref name="penmApiFunction"/> value.
-        /// </param>
-        /// <returns>
-        /// The return value is the query string to submit to the single API
-        /// endpoint.
-        /// </returns>
-        private string BuildQueryString (
-            ApiFunction penmApiFunction ,
-            string pstrParameterValue )
-        {
-            // Template:    ?function=SYMBOL_SEARCH&keywords=BA&apikey=YH5RG5INKJN1HCXL
-
-            _map = _map ?? LoadMap ( );
-
-            RestClient.QueryStringBuilder queryStringBuilder = new RestClient.QueryStringBuilder ( );
-
-            FunctionMapItem mapItem = _map [ ( int ) penmApiFunction ];
-            queryStringBuilder.AddParameter (
-                @"function" ,
-                mapItem.function.ToString ( ) );
-            queryStringBuilder.AddParameter (
-                mapItem.parameter ,
-                pstrParameterValue );
-            queryStringBuilder.AddParameter (
-                @"apikey" ,
-                Properties.Settings.Default.apikey );
-
-            return queryStringBuilder.GetQueryString ( );
-        }   // private string BuildQueryString method
 
 
         private static FunctionMapItem [ ] LoadMap ( )
@@ -245,78 +316,7 @@ namespace StockTickerSparklines
         }   // private static FunctionMapItem LoadMap method
 
 
-        private StringFixups.StringFixup [ ] LoadStringFixups ( string pstrEmbeddedResourceName )
-        {
-            const string LABEL_ROW = @"JSON	VS";
-            const string TSV_EXTENSION = @".txt";
-
-            const int STRING_PER_RESPONSE = ArrayInfo.ARRAY_FIRST_ELEMENT;
-            const int STRING_FOR_JSONCONVERTER = STRING_PER_RESPONSE + ArrayInfo.NEXT_INDEX;
-            const int EXPECTED_FIELD_COUNT = STRING_FOR_JSONCONVERTER + ArrayInfo.NEXT_INDEX;
-
-            string strEmbeddResourceFileName = string.Concat (
-                pstrEmbeddedResourceName ,
-                TSV_EXTENSION );
-            string [ ] astrAllMapItems = Readers.LoadTextFileFromEntryAssembly ( strEmbeddResourceFileName );
-            Parser parser = new Parser (
-                CSVParseEngine.DelimiterChar.Tab ,
-                CSVParseEngine.GuardChar.DoubleQuote ,
-                CSVParseEngine.GuardDisposition.Strip );
-            StringFixups.StringFixup [ ] rFunctionMaps = new StringFixups.StringFixup [ ArrayInfo.IndexFromOrdinal ( astrAllMapItems.Length ) ];
-
-            for ( int intI = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                      intI < astrAllMapItems.Length ;
-                      intI++ )
-            {
-                if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
-                {
-                    if ( astrAllMapItems [ intI ] != LABEL_ROW )
-                    {
-                        throw new Exception (
-                            string.Format (
-                                Properties.Resources.ERRMSG_CORRUPTED_EMBBEDDED_RESOURCE_LABEL ,
-                                new string [ ]
-                                {
-                                    strEmbeddResourceFileName ,                 // Format Item 0: internal resource {0}
-                                    LABEL_ROW ,                                 // Format Item 1: Expected value = {1}
-                                    astrAllMapItems [ intI ] ,                  // Format Item 2: Actual value   = {2}
-                                    Environment.NewLine                         // Format Item 3: Platform-specific newline
-                                } ) );
-                    }   // if ( astrAllMapItems[intI] != LABEL_ROW )
-                }   // TRUE (label row sanity check 1 of 2) block, if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
-                else
-                {
-                    string [ ] astrFields = parser.Parse ( astrAllMapItems [ intI ] );
-
-                    if ( astrFields.Length == EXPECTED_FIELD_COUNT )
-                    {
-                        rFunctionMaps [ ArrayInfo.IndexFromOrdinal ( intI ) ] = new StringFixups.StringFixup (
-                            astrFields [ STRING_PER_RESPONSE ] ,
-                            astrFields [ STRING_FOR_JSONCONVERTER ] );
-                    }   // TRUE (anticipated outcome) block, if ( astrFields.Length == EXPECTED_FIELD_COUNT )
-                    else
-                    {
-                        throw new Exception (
-                            string.Format (
-                                Properties.Resources.ERRMSG_CORRUPTED_EMBEDDED_RESOURCE_DETAIL ,
-                                new object [ ]
-                                {
-                                    intI ,                                      // Format Item 0: Detail record {0}
-                                    strEmbeddResourceFileName ,                 // Format Item 1: internal resource {1}
-                                    EXPECTED_FIELD_COUNT ,                      // Format Item 2: Expected field count = {2}
-                                    astrFields.Length ,                         // Format Item 3: Actual field count   = {3}
-                                    astrAllMapItems [ intI ] ,                  // Format Item 4: Actual record        = {4}
-                                    Environment.NewLine                         // Format Item 5: Platform-specific newline
-                                } ) );
-                    }   // FALSE (unanticipated outcome) block, if ( astrFields.Length == EXPECTED_FIELD_COUNT )
-                }   // FALSE (detail row) block, if ( intI == ArrayInfo.ARRAY_FIRST_ELEMENT )
-            }   // for ( int intI = ArrayInfo.ARRAY_FIRST_ELEMENT ; intI < astrAllMapItems.Length ; intI++ )
-
-            return rFunctionMaps;
-        }   // private StringFixups.StringFixup [ ] GetSStringFixups
-
-
-        private FunctionMapItem [ ] _map = null;
+        private static FunctionMapItem [ ] _map = null;
 
   
         private RestClient _restClient = null;

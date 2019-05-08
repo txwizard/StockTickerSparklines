@@ -97,7 +97,7 @@ namespace StockTickerSparklines
             {   // Work the grid from the bottom up.
                 if ( xlWork.ActiveSheet.Cells [ intCurrAbsRow , ArrayInfo.ARRAY_FIRST_ELEMENT ].Value.Equals ( strKeepThisRow ) )
                 {
-                    keptRows.Add ( new KeptRow ( __intAbsLastRow ) );
+                    keptRows.Add ( new KeptRow ( intCurrAbsRow ) );
 
                     if ( fNewTopRow )
                     {
@@ -131,11 +131,11 @@ namespace StockTickerSparklines
             if ( fNewTopRow )
             {
                 for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ;
-                          intRowIndex > ArrayInfo.ARRAY_INVALID_INDEX ;
+                          intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ;
                           intRowIndex-- )
                 {   // Work from the top down.
                     ClearPopulatedCellsInRow ( intRowIndex );
-                }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > ArrayInfo.ARRAY_INVALID_INDEX ; intRowIndex-- )
+                }   // for ( int intRowIndex = __intAbsLastRow - ArrayInfo.NEXT_INDEX ; intRowIndex > ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex-- )
             }   // if ( fNewTopRow )
 
             if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
@@ -150,15 +150,22 @@ namespace StockTickerSparklines
                     {
                         MovePopulatedRow (
                             keptRows [ intRowIndex ].RowIndex ,
-                            intRowIndex ,
+                            ArrayInfo.OrdinalFromIndex ( intRowIndex ) ,
                             __intAbsLastCol ,
                             xlWork.ActiveSheet.Cells );
                     }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < keptRows.Count ; intRowIndex++ )
                 }   // if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
-            }   // if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+
+                __intAbsLastRow = keptRows.Count;
+            }   // TRUE (anticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
+            else
+            {
+                __intAbsLastRow = ArrayInfo.ARRAY_SECOND_ELEMENT;
+            }   // FALSE (unanticipated outcome) block, if ( keptRows.Count > ListInfo.LIST_IS_EMPTY )
 
             cmdGetHistory.IsEnabled = true;
             cmdPruneSelections.IsEnabled = false;
+            txtMessage.Text = Properties.Resources.MSG_LIST_PRUNED;
         }   // CmdPruneSelections_Click event delegate
 
 

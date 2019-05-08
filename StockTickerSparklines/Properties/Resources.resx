@@ -152,6 +152,9 @@
     <value>Enter search string.</value>
     <comment>Prompt to display on form after reset</comment>
   </data>
+  <data name="MSG_LIST_PRUNED" xml:space="preserve">
+    <value>List pruned, ready to get history?</value>
+  </data>
   <data name="SYMBOLINFO_TOSTRING_TEMPLATE" xml:space="preserve">
     <value>Order = {0}, Label = {1}</value>
     <comment>The ToString  override method on SymbolInfo uses this template to represent the property values; this is how they appear in a watch window.</comment>

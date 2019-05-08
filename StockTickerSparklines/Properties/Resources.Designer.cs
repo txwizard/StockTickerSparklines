@@ -151,6 +151,15 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to List pruned, ready to get history?.
+        /// </summary>
+        public static string MSG_LIST_PRUNED {
+            get {
+                return ResourceManager.GetString("MSG_LIST_PRUNED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Order = {0}, Label = {1}.
         /// </summary>
         public static string SYMBOLINFO_TOSTRING_TEMPLATE {

@@ -26,12 +26,6 @@ namespace StockTickerSparklines
     /// </summary>
     public partial class MainWindow : Window
     {
-        enum ActiveBuilder
-        {
-            Builder1,
-            Builder2
-        }   // enum ActiveBuilder
-
         #region Constructor
         public MainWindow ( )
         {
@@ -254,8 +248,6 @@ namespace StockTickerSparklines
             const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";                                  // Post: "Time_Series_Daily": [
 
             StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
-            StringBuilder builder2 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
-            ActiveBuilder activeBuilder = ActiveBuilder.Builder1;
 
             builder1.Append (
                 pstrFixedUp_Pass_1.Replace (
@@ -268,42 +260,32 @@ namespace StockTickerSparklines
             {
                 intLastMatch = FixNextItem (
                     builder1 ,
-                    builder2 ,
-                    intLastMatch ,
-                    ref activeBuilder );
+                    intLastMatch );
             }   // while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
 
-            return activeBuilder == ActiveBuilder.Builder1
-                ? builder1.ToString ( )
-                : builder2.ToString ( );
+            return builder1.ToString ( );
         }   // private string ApplyFixups_Pass_2
 
 
         private int FixNextItem (
-            StringBuilder pbuilder1 ,
-            StringBuilder pbuilder2 ,
-            int pintLastMatch ,
-            ref ActiveBuilder penmActiveBuilder )
+            StringBuilder pbuilder ,
+            int pintLastMatch )
         {
             const string ITEM_BREAK_ANTE = "},\n        \"";                                            // Ante: },\n        "
 
-            string strInput = penmActiveBuilder == ActiveBuilder.Builder1
-                ? pbuilder1.ToString ( )
-                : pbuilder2.ToString ( );
+            string strInput = pbuilder.ToString ( );
+
             int intMatchPosition = strInput.IndexOf (
                 ITEM_BREAK_ANTE ,
                 pintLastMatch );
 
             if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
             {
-                ToggleBuilderFlag ( ref penmActiveBuilder );
                 return FixThisItem (
                     strInput ,
                     intMatchPosition ,
                     ITEM_BREAK_ANTE.Length ,
-                    penmActiveBuilder == ActiveBuilder.Builder1
-                        ? pbuilder1
-                        : pbuilder2 );
+                    pbuilder );
             }   // TRUE (At least one match remains.) block, if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
             else
             {
@@ -319,10 +301,13 @@ namespace StockTickerSparklines
             StringBuilder psbOut )
         {
             const string ITEM_BREAK_POST = "},\n        {\n        {\n        \"Activity_Date\": \"";   // Post: },\n        {\n        {\n        "Activity_Date": "
+
             const int DATE_TOKEN_LENGTH = 11;
             const int DATE_TOKEN_SKIP_CHARS = DATE_TOKEN_LENGTH + 4;
 
             int intSkipOverMatchedCharacters = pintMatchPosition + pintMatchLength;
+
+            psbOut.Clear ( );
 
             psbOut.Append ( pstrInput.Substring (
                 ListInfo.SUBSTR_BEGINNING ,
@@ -663,15 +648,6 @@ namespace StockTickerSparklines
 
             this.xlWork.ActiveSheet.Protect = true;
         }   // private void ShowSearchResults
-
-
-        private void ToggleBuilderFlag ( ref ActiveBuilder penmActiveBuilder )
-        {
-            if ( penmActiveBuilder == ActiveBuilder.Builder1 )
-                penmActiveBuilder = ActiveBuilder.Builder2;
-            else
-                penmActiveBuilder = ActiveBuilder.Builder1;
-        }   // private void ToggleBuilder
         #endregion  // Private Worker Methods
 
 

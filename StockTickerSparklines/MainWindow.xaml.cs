@@ -26,6 +26,12 @@ namespace StockTickerSparklines
     /// </summary>
     public partial class MainWindow : Window
     {
+        enum ActiveBuilder
+        {
+            Builder1,
+            Builder2
+        }   // enum ActiveBuilder
+
         #region Constructor
         public MainWindow ( )
         {
@@ -170,6 +176,8 @@ namespace StockTickerSparklines
             int pintCurrRow ,
             int pintAbsLastCol )
         {
+            const string DEBUG_FILE_NAME_TEMPLATE = @"F:\Source_Code\Visual_Studio\Projects\_Laboratory\StockTickerSparklines\NOTES\strResponse_{0}_{1}.TXT";
+
             StockTickerEngine tickerEngine = StockTickerEngine.GetTheSingleInstance ( );
 
             string strQueryString = StockTickerEngine.BuildQueryString (
@@ -209,14 +217,125 @@ namespace StockTickerSparklines
                 TraceLogger.WriteWithBothTimesLabeledLocalFirst ( @"The response looks good." );
                 StringFixups.StringFixup [ ] stringFixups = StockTickerEngine.LoadStringFixups (
                     @"TIME_SERIES_DAILY_ResponseMap" );
-                StringFixups responseStringFixups = new StringFixups (
-                    stringFixups );
-                DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
-                    responseStringFixups.ApplyFixups (
-                        strResponse ) );
+                StringFixups responseStringFixups = new StringFixups ( stringFixups );
+                string strFixedUp_Pass_1 = responseStringFixups.ApplyFixups ( strResponse );
+                string strFixedUp_Pass_2 = ApplyFixups_Pass_2 ( strFixedUp_Pass_1 );
+
+                System.IO.File.WriteAllText (
+                    string.Format (
+                        DEBUG_FILE_NAME_TEMPLATE ,
+                        pstrSymbol ,
+                        @"Raw" ) ,
+                    strResponse );
+                System.IO.File.WriteAllText (
+                    string.Format (
+                        DEBUG_FILE_NAME_TEMPLATE ,
+                        pstrSymbol ,
+                        @"Pass_1" ) ,
+                    strFixedUp_Pass_1 );
+                System.IO.File.WriteAllText (
+                    string.Format (
+                        DEBUG_FILE_NAME_TEMPLATE ,
+                        pstrSymbol ,
+                        @"Pass_2" ) ,
+                    strFixedUp_Pass_2 );
+
+                //DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
+                //    responseStringFixups.ApplyFixups (
+                //        strResponse ) );
                 txtMessage.Text = Properties.Resources.MSG_HAVE_HISTORY;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private void GetHistoryForSymbol
+
+
+        private string ApplyFixups_Pass_2 ( string pstrFixedUp_Pass_1 )
+        {
+            const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";                                     // Ante: "TimeSeriesDaily": {
+            const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";                                  // Post: "Time_Series_Daily": [
+
+            StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
+            StringBuilder builder2 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
+            ActiveBuilder activeBuilder = ActiveBuilder.Builder1;
+
+            builder1.Append (
+                pstrFixedUp_Pass_1.Replace (
+                    TSD_LABEL_ANTE ,
+                    TSD_LABEL_POST ) );
+
+            int intLastMatch = builder1.Length + ArrayInfo.NEXT_INDEX;
+
+            while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
+            {
+                intLastMatch = FixNextItem (
+                    builder1 ,
+                    builder2 ,
+                    intLastMatch ,
+                    ref activeBuilder );
+            }   // while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
+
+            return activeBuilder == ActiveBuilder.Builder1
+                ? builder1.ToString ( )
+                : builder2.ToString ( );
+        }   // private string ApplyFixups_Pass_2
+
+
+        private int FixNextItem (
+            StringBuilder pbuilder1 ,
+            StringBuilder pbuilder2 ,
+            int pintLastMatch ,
+            ref ActiveBuilder penmActiveBuilder )
+        {
+            const string ITEM_BREAK_ANTE = "},\n        \"";                                            // Ante: },\n        "
+
+            string strInput = penmActiveBuilder == ActiveBuilder.Builder1
+                ? pbuilder1.ToString ( )
+                : pbuilder2.ToString ( );
+            int intMatchPosition = strInput.IndexOf (
+                ITEM_BREAK_ANTE ,
+                pintLastMatch );
+
+            if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
+            {
+                ToggleBuilderFlag ( ref penmActiveBuilder );
+                return FixThisItem (
+                    strInput ,
+                    intMatchPosition ,
+                    ITEM_BREAK_ANTE.Length ,
+                    penmActiveBuilder == ActiveBuilder.Builder1
+                        ? pbuilder1
+                        : pbuilder2 );
+            }   // TRUE (At least one match remains.) block, if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
+            else
+            {
+                return ListInfo.INDEXOF_NOT_FOUND;
+            }   // FALSE (All matches have been found.) block, if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
+        }   // private int FixNextItem
+
+
+        private int FixThisItem (
+            string pstrInput ,
+            int pintMatchPosition ,
+            int pintMatchLength ,
+            StringBuilder psbOut )
+        {
+            const string ITEM_BREAK_POST = "},\n        {\n        {\n        \"Activity_Date\": \"";   // Post: },\n        {\n        {\n        "Activity_Date": "
+            const int DATE_TOKEN_LENGTH = 11;
+            const int DATE_TOKEN_SKIP_CHARS = DATE_TOKEN_LENGTH + 4;
+
+            int intSkipOverMatchedCharacters = pintMatchPosition + pintMatchLength;
+
+            psbOut.Append ( pstrInput.Substring (
+                ListInfo.SUBSTR_BEGINNING ,
+                ArrayInfo.OrdinalFromIndex ( pintMatchPosition ) ) );
+            psbOut.Append ( ITEM_BREAK_POST );
+            psbOut.Append ( pstrInput.Substring (
+                intSkipOverMatchedCharacters ,
+                DATE_TOKEN_LENGTH ) );
+            psbOut.Append ( SpecialCharacters.COMMA );
+            psbOut.Append ( pstrInput.Substring ( intSkipOverMatchedCharacters + DATE_TOKEN_SKIP_CHARS ) );
+
+            return ArrayInfo.OrdinalFromIndex ( pintMatchPosition + ITEM_BREAK_POST.Length );
+        }   // private int FixThisItem
 
 
         private void MovePopulatedRow (
@@ -544,9 +663,18 @@ namespace StockTickerSparklines
 
             this.xlWork.ActiveSheet.Protect = true;
         }   // private void ShowSearchResults
+
+
+        private void ToggleBuilderFlag ( ref ActiveBuilder penmActiveBuilder )
+        {
+            if ( penmActiveBuilder == ActiveBuilder.Builder1 )
+                penmActiveBuilder = ActiveBuilder.Builder2;
+            else
+                penmActiveBuilder = ActiveBuilder.Builder1;
+        }   // private void ToggleBuilder
         #endregion  // Private Worker Methods
 
-  
+
         #region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;

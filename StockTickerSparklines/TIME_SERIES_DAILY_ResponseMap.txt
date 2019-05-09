@@ -1,4 +1,5 @@
 ﻿JSON	VS
+Meta Data	Meta_Data
 1. Information	Information
 2. Symbol	Symbol
 3. Last Refreshed	LastRefreshed

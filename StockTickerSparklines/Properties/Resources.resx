@@ -118,16 +118,16 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BTN_LBL_HISTORY" xml:space="preserve">
-    <value>Get History</value>
+    <value>Get _History</value>
   </data>
   <data name="BTN_LBL_PRUNE" xml:space="preserve">
-    <value>Prune Selections</value>
+    <value>_Prune Selections</value>
   </data>
   <data name="BTN_LBL_RESET" xml:space="preserve">
-    <value>Reset Form</value>
+    <value>_Reset Form</value>
   </data>
   <data name="BTN_LBL_SEARCH" xml:space="preserve">
-    <value>Search</value>
+    <value>_Search</value>
   </data>
   <data name="ERRMSG_CORRUPTED_EMBBEDDED_RESOURCE_LABEL" xml:space="preserve">
     <value>The label row of internal resource {0} is invalid.{3}    Expected value = {1}{3}    Actual value   = {2}</value>
@@ -136,6 +136,9 @@
   <data name="ERRMSG_CORRUPTED_EMBEDDED_RESOURCE_DETAIL" xml:space="preserve">
     <value>Detail record {0} of internal resource {1} is invalid.{5}    Expected field count = {2}{5}    Actual field count   = {3}{5}    Actual record        = {4}</value>
     <comment>The private LoadMap routine in the StockTickerEngine singleton uses this message to report a corrupted label row in its internal resource file.</comment>
+  </data>
+  <data name="ERRMSG_INTERNAL_ERROR_SEARCH_BUSY" xml:space="preserve">
+    <value>INTERNAL ERROR: The search task is already busy.</value>
   </data>
   <data name="ERRMSG_SERVER_ERROR_REPORT" xml:space="preserve">
     <value>Stock Quote Server Error: Message     = {0}{3}                          Endpoint    = {1}{3}                          QueryString = {2}</value>
@@ -157,6 +160,9 @@
   </data>
   <data name="MSG_LIST_PRUNED" xml:space="preserve">
     <value>List pruned, ready to get history?</value>
+  </data>
+  <data name="MSG_SEARCH_UNDERWAY" xml:space="preserve">
+    <value>Searching for matching Ticker Symbols ...</value>
   </data>
   <data name="MSG_SYMBOLS_FOUND" xml:space="preserve">
     <value>Matching symbols found</value>

@@ -61,7 +61,7 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Get History.
+        ///   Looks up a localized string similar to Get _History.
         /// </summary>
         public static string BTN_LBL_HISTORY {
             get {
@@ -70,7 +70,7 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Prune Selections.
+        ///   Looks up a localized string similar to _Prune Selections.
         /// </summary>
         public static string BTN_LBL_PRUNE {
             get {
@@ -79,7 +79,7 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Reset Form.
+        ///   Looks up a localized string similar to _Reset Form.
         /// </summary>
         public static string BTN_LBL_RESET {
             get {
@@ -88,7 +88,7 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Search.
+        ///   Looks up a localized string similar to _Search.
         /// </summary>
         public static string BTN_LBL_SEARCH {
             get {
@@ -111,6 +111,15 @@ namespace StockTickerSparklines.Properties {
         public static string ERRMSG_CORRUPTED_EMBEDDED_RESOURCE_DETAIL {
             get {
                 return ResourceManager.GetString("ERRMSG_CORRUPTED_EMBEDDED_RESOURCE_DETAIL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to INTERNAL ERROR: The search task is already busy..
+        /// </summary>
+        public static string ERRMSG_INTERNAL_ERROR_SEARCH_BUSY {
+            get {
+                return ResourceManager.GetString("ERRMSG_INTERNAL_ERROR_SEARCH_BUSY", resourceCulture);
             }
         }
         
@@ -165,6 +174,15 @@ namespace StockTickerSparklines.Properties {
         public static string MSG_LIST_PRUNED {
             get {
                 return ResourceManager.GetString("MSG_LIST_PRUNED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Searching for matching Ticker Symbols ....
+        /// </summary>
+        public static string MSG_SEARCH_UNDERWAY {
+            get {
+                return ResourceManager.GetString("MSG_SEARCH_UNDERWAY", resourceCulture);
             }
         }
         

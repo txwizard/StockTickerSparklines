@@ -30,6 +30,7 @@ namespace StockTickerSparklines
         public MainWindow ( )
         {
             InitializeComponent ( );
+
             this.Title = System.Reflection.Assembly.GetExecutingAssembly ( ).GetName ( ).Name;
         }   // public MainWindow default constructor
         #endregion  // Constructor
@@ -57,12 +58,15 @@ namespace StockTickerSparklines
 
             this.cmdSearch.IsEnabled = ( textBox.Text.Length > ListInfo.EMPTY_STRING_LENGTH );
         }   // private void TxtSearchString_TextChanged event delegate
- 
- 
+
+
+
         private void CmdSearch_Click ( object sender , RoutedEventArgs e )
         {
             try
             {
+                txtMessage.Text = Properties.Resources.MSG_SEARCH_UNDERWAY;
+
                 StockTickerEngine tickerEngine = StockTickerEngine.GetTheSingleInstance ( );
                 TickerSymbolMatches symbols = tickerEngine.Search ( txtSearchString.Text );
 
@@ -246,6 +250,7 @@ namespace StockTickerSparklines
         {
             const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";                                     // Ante: "TimeSeriesDaily": {
             const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";                                  // Post: "Time_Series_Daily": [
+            const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;                               // Deduct one from the length to account for the first character occupying the position where copying begins.
 
             StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
 
@@ -254,7 +259,15 @@ namespace StockTickerSparklines
                     TSD_LABEL_ANTE ,
                     TSD_LABEL_POST ) );
 
-            int intLastMatch = builder1.Length + ArrayInfo.NEXT_INDEX;
+            int intMatchPos = builder1.ToString ( ).IndexOf ( TSD_LABEL_POST );
+            int intReplacementLen = TSD_LABEL_POST.Length;
+            int intLastMatch =   builder1.ToString ( ).IndexOf ( TSD_LABEL_POST ) 
+                               + TSD_LABEL_POST.Length
+                               - DOBULE_COUNTING_ADJUSTMENT;
+
+            char chrAtMatch = builder1.ToString ( ) [ intMatchPos ];
+            char chrAtReplaced = builder1.ToString ( ) [ intMatchPos + intReplacementLen ];
+            char chrAtEnd = builder1.ToString ( ) [ intLastMatch ];
 
             while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
             {
@@ -271,12 +284,15 @@ namespace StockTickerSparklines
             StringBuilder pbuilder ,
             int pintLastMatch )
         {
-            const string ITEM_BREAK_ANTE = "},\n        \"";                                            // Ante: },\n        "
+            const string FIRST_ITEM_BREAK_ANTE = "[\n        \"";                // Ante: },\n        "
+            const string SUBSEQUENT_ITEM_BREAK_ANTE = "},\n        \"";         // Ante: },\n        "
 
             string strInput = pbuilder.ToString ( );
-
+            char chrAtLastMatch = strInput [ pintLastMatch ];
             int intMatchPosition = strInput.IndexOf (
-                ITEM_BREAK_ANTE ,
+                __fIsFirstPass
+                    ? FIRST_ITEM_BREAK_ANTE
+                    : SUBSEQUENT_ITEM_BREAK_ANTE ,
                 pintLastMatch );
 
             if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
@@ -284,7 +300,9 @@ namespace StockTickerSparklines
                 return FixThisItem (
                     strInput ,
                     intMatchPosition ,
-                    ITEM_BREAK_ANTE.Length ,
+                    __fIsFirstPass
+                        ? FIRST_ITEM_BREAK_ANTE.Length
+                        : SUBSEQUENT_ITEM_BREAK_ANTE.Length ,
                     pbuilder );
             }   // TRUE (At least one match remains.) block, if ( intMatchPosition > ListInfo.INDEXOF_NOT_FOUND )
             else
@@ -300,10 +318,11 @@ namespace StockTickerSparklines
             int pintMatchLength ,
             StringBuilder psbOut )
         {
-            const string ITEM_BREAK_POST = "},\n        {\n        {\n        \"Activity_Date\": \"";   // Post: },\n        {\n        {\n        "Activity_Date": "
+            const string FIRST_ITEM_BREAK_POST = "},\n        {\n            \"Activity_Date\": \"";        // Post: },\n        {\n        {\n        "Activity_Date": "
+            const string SUBSEQUENT_ITEM_BREAK_POST = "]\n        {\n            \"Activity_Date\": \"";    // Post: },\n        {\n        {\n        "Activity_Date": "
 
             const int DATE_TOKEN_LENGTH = 11;
-            const int DATE_TOKEN_SKIP_CHARS = DATE_TOKEN_LENGTH + 4;
+            const int DATE_TOKEN_SKIP_CHARS = DATE_TOKEN_LENGTH + 3;
 
             int intSkipOverMatchedCharacters = pintMatchPosition + pintMatchLength;
 
@@ -312,14 +331,22 @@ namespace StockTickerSparklines
             psbOut.Append ( pstrInput.Substring (
                 ListInfo.SUBSTR_BEGINNING ,
                 ArrayInfo.OrdinalFromIndex ( pintMatchPosition ) ) );
-            psbOut.Append ( ITEM_BREAK_POST );
+            psbOut.Append ( __fIsFirstPass
+                ? FIRST_ITEM_BREAK_POST
+                : SUBSEQUENT_ITEM_BREAK_POST );
             psbOut.Append ( pstrInput.Substring (
                 intSkipOverMatchedCharacters ,
                 DATE_TOKEN_LENGTH ) );
             psbOut.Append ( SpecialCharacters.COMMA );
+            string strShow1 = pstrInput.Substring ( intSkipOverMatchedCharacters + DATE_TOKEN_SKIP_CHARS );
             psbOut.Append ( pstrInput.Substring ( intSkipOverMatchedCharacters + DATE_TOKEN_SKIP_CHARS ) );
 
-            return ArrayInfo.OrdinalFromIndex ( pintMatchPosition + ITEM_BREAK_POST.Length );
+            __fIsFirstPass = false;     // Putting this here allows execution to be unconditional.
+
+            return ArrayInfo.OrdinalFromIndex ( pintMatchPosition 
+                   + ( __fIsFirstPass
+                        ? FIRST_ITEM_BREAK_POST.Length
+                        : SUBSEQUENT_ITEM_BREAK_POST.Length ) );
         }   // private int FixThisItem
 
 
@@ -652,8 +679,12 @@ namespace StockTickerSparklines
 
 
         #region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
+        private bool __fIsFirstPass = true;
+
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
+
+        private System.ComponentModel.BackgroundWorker __workerThread = null;
         #endregion  // Private Custom Instance Storage
 
 

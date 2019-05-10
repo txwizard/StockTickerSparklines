@@ -61,7 +61,7 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Get _History.
+        ///   Looks up a localized string similar to _Get History.
         /// </summary>
         public static string BTN_LBL_HISTORY {
             get {

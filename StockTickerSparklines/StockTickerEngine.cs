@@ -199,11 +199,13 @@ namespace StockTickerSparklines
                 RestClient.ContentType.JSON );
             string strResponse = _restClient.MakeRequest ( strQueryString );
 
+#if SEND_JSON_TO_TRACE
             TraceLogger.WriteWithBothTimesLabeledLocalFirst (
                 string.Format (
                     @"JSON response returned by API:{1}{1}{0}" ,
                     strResponse ,
                     Environment.NewLine ) );
+#endif  // #if SEND_JSON_TO_TRACE
 
             if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
             {

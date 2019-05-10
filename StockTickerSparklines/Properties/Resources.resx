@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BTN_LBL_HISTORY" xml:space="preserve">
-    <value>Get _History</value>
+    <value>_Get History</value>
   </data>
   <data name="BTN_LBL_PRUNE" xml:space="preserve">
     <value>_Prune Selections</value>

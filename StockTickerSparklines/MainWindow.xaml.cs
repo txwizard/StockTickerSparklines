@@ -187,11 +187,13 @@ namespace StockTickerSparklines
                 RestClient.ContentType.JSON );
             string strResponse = _restClient.MakeRequest ( strQueryString );
 
+#if SEND_JSON_TO_TRACE
             TraceLogger.WriteWithBothTimesLabeledLocalFirst (
                 string.Format (
                     @"JSON response returned by API:{1}{1}{0}" ,
                     strResponse ,
                     Environment.NewLine ) );
+#endif  // #if SEND_JSON_TO_TRACE
 
             if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
             {
@@ -219,6 +221,7 @@ namespace StockTickerSparklines
                 string strFixedUp_Pass_1 = responseStringFixups.ApplyFixups ( strResponse );
                 string strFixedUp_Pass_2 = ApplyFixups_Pass_2 ( strFixedUp_Pass_1 );
 
+#if SEND_JSON_TO_FILE
                 System.IO.File.WriteAllText (
                     string.Format (
                         DEBUG_FILE_NAME_TEMPLATE ,
@@ -237,10 +240,11 @@ namespace StockTickerSparklines
                         pstrSymbol ,
                         @"Pass_2" ) ,
                     strFixedUp_Pass_2 );
+#endif  // #IF SEND_JSON_TO_FILE
 
-                //DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
-                //    responseStringFixups.ApplyFixups (
-                //        strResponse ) );
+                DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
+                    strFixedUp_Pass_2 );
+
                 txtMessage.Text = Properties.Resources.MSG_HAVE_HISTORY;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private void GetHistoryForSymbol
@@ -248,9 +252,13 @@ namespace StockTickerSparklines
 
         private string ApplyFixups_Pass_2 ( string pstrFixedUp_Pass_1 )
         {
-            const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";                                     // Ante: "TimeSeriesDaily": {
-            const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";                                  // Post: "Time_Series_Daily": [
-            const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;                               // Deduct one from the length to account for the first character occupying the position where copying begins.
+            const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";             // Ante: "TimeSeriesDaily": {
+            const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";          // Post: "Time_Series_Daily": [
+
+            const string END_BLOCK_ANTE = "}\n    }\n}";
+            const string END_BLOCK_POST = "}\n    ]\n}";
+
+            const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;       // Deduct one from the length to account for the first character occupying the position where copying begins.
 
             StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
 
@@ -258,16 +266,9 @@ namespace StockTickerSparklines
                 pstrFixedUp_Pass_1.Replace (
                     TSD_LABEL_ANTE ,
                     TSD_LABEL_POST ) );
-
-            int intMatchPos = builder1.ToString ( ).IndexOf ( TSD_LABEL_POST );
-            int intReplacementLen = TSD_LABEL_POST.Length;
             int intLastMatch =   builder1.ToString ( ).IndexOf ( TSD_LABEL_POST ) 
                                + TSD_LABEL_POST.Length
                                - DOBULE_COUNTING_ADJUSTMENT;
-
-            char chrAtMatch = builder1.ToString ( ) [ intMatchPos ];
-            char chrAtReplaced = builder1.ToString ( ) [ intMatchPos + intReplacementLen ];
-            char chrAtEnd = builder1.ToString ( ) [ intLastMatch ];
 
             while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
             {
@@ -275,6 +276,15 @@ namespace StockTickerSparklines
                     builder1 ,
                     intLastMatch );
             }   // while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
+
+            //  ----------------------------------------------------------------
+            //  Close the array by replacing the last French brace with a square
+            //  bracket.
+            //  ----------------------------------------------------------------
+
+            builder1.Replace (
+                END_BLOCK_ANTE ,
+                END_BLOCK_POST );
 
             return builder1.ToString ( );
         }   // private string ApplyFixups_Pass_2
@@ -288,7 +298,6 @@ namespace StockTickerSparklines
             const string SUBSEQUENT_ITEM_BREAK_ANTE = "},\n        \"";         // Ante: },\n        "
 
             string strInput = pbuilder.ToString ( );
-            char chrAtLastMatch = strInput [ pintLastMatch ];
             int intMatchPosition = strInput.IndexOf (
                 __fIsFirstPass
                     ? FIRST_ITEM_BREAK_ANTE
@@ -318,8 +327,8 @@ namespace StockTickerSparklines
             int pintMatchLength ,
             StringBuilder psbOut )
         {
-            const string FIRST_ITEM_BREAK_POST = "},\n        {\n            \"Activity_Date\": \"";        // Post: },\n        {\n        {\n        "Activity_Date": "
-            const string SUBSEQUENT_ITEM_BREAK_POST = "]\n        {\n            \"Activity_Date\": \"";    // Post: },\n        {\n        {\n        "Activity_Date": "
+            const string FIRST_ITEM_BREAK_POST = "\n        {\n            \"Activity_Date\": \"";        // Post: },\n        {\n        {\n        "Activity_Date": "
+            const string SUBSEQUENT_ITEM_BREAK_POST = ",\n        {\n            \"Activity_Date\": \"";    // Post: },\n        {\n        {\n        "Activity_Date": "
 
             const int DATE_TOKEN_LENGTH = 11;
             const int DATE_TOKEN_SKIP_CHARS = DATE_TOKEN_LENGTH + 3;
@@ -338,15 +347,15 @@ namespace StockTickerSparklines
                 intSkipOverMatchedCharacters ,
                 DATE_TOKEN_LENGTH ) );
             psbOut.Append ( SpecialCharacters.COMMA );
-            string strShow1 = pstrInput.Substring ( intSkipOverMatchedCharacters + DATE_TOKEN_SKIP_CHARS );
             psbOut.Append ( pstrInput.Substring ( intSkipOverMatchedCharacters + DATE_TOKEN_SKIP_CHARS ) );
 
+            int rintSearchResumePosition =   pintMatchPosition 
+                                           + ( __fIsFirstPass 
+                                                    ? FIRST_ITEM_BREAK_POST.Length
+                                                    : SUBSEQUENT_ITEM_BREAK_POST.Length );
             __fIsFirstPass = false;     // Putting this here allows execution to be unconditional.
 
-            return ArrayInfo.OrdinalFromIndex ( pintMatchPosition 
-                   + ( __fIsFirstPass
-                        ? FIRST_ITEM_BREAK_POST.Length
-                        : SUBSEQUENT_ITEM_BREAK_POST.Length ) );
+            return ArrayInfo.OrdinalFromIndex ( rintSearchResumePosition );
         }   // private int FixThisItem
 
 
@@ -675,20 +684,20 @@ namespace StockTickerSparklines
 
             this.xlWork.ActiveSheet.Protect = true;
         }   // private void ShowSearchResults
-        #endregion  // Private Worker Methods
+#endregion  // Private Worker Methods
 
 
-        #region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
+#region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
         private bool __fIsFirstPass = true;
 
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
 
         private System.ComponentModel.BackgroundWorker __workerThread = null;
-        #endregion  // Private Custom Instance Storage
+#endregion  // Private Custom Instance Storage
 
 
-        #region Nested Private Classes
+#region Nested Private Classes
         private class KeptRow : IComparable<KeptRow>
         {
             private KeptRow ( )
@@ -738,6 +747,6 @@ namespace StockTickerSparklines
                 return pintInput * MagicNumbers.MINUS_ONE;
             }   // private static int Invert
         }   // private class KeptRow
-        #endregion  // Nested Private Classes
+#endregion  // Nested Private Classes
     }   // public partial class MainWindow
 }   // partial namespace StockTickerSparklines

@@ -174,7 +174,9 @@ namespace StockTickerSparklines
             int pintCurrRow ,
             int pintAbsLastCol )
         {
+#if SEND_JSON_TO_FILE
             const string DEBUG_FILE_NAME_TEMPLATE = @"F:\Source_Code\Visual_Studio\Projects\_Laboratory\StockTickerSparklines\NOTES\strResponse_{0}_{1}.TXT";
+#endif  // #if SEND_JSON_TO_FILE
 
             StockTickerEngine tickerEngine = StockTickerEngine.GetTheSingleInstance ( );
 
@@ -245,6 +247,9 @@ namespace StockTickerSparklines
                 DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
                     strFixedUp_Pass_2 );
 
+                string [ ] astrAllMapItems = WizardWrx.EmbeddedTextFile.Readers.LoadTextFileFromEntryAssembly (
+                    @"Time_Series_Daily.txt" );
+
                 txtMessage.Text = Properties.Resources.MSG_HAVE_HISTORY;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private void GetHistoryForSymbol
@@ -259,6 +264,8 @@ namespace StockTickerSparklines
             const string END_BLOCK_POST = "}\n    ]\n}";
 
             const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;       // Deduct one from the length to account for the first character occupying the position where copying begins.
+
+            __fIsFirstPass = true;                                              // Re-initialize the First Pass flag.
 
             StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
 

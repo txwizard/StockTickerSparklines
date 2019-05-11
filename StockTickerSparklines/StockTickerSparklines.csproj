@@ -148,5 +148,8 @@
   <ItemGroup>
     <EmbeddedResource Include="TIME_SERIES_DAILY_ResponseMap.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Time_Series_Daily.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,0 +1,9 @@
+﻿Activity_Date
+Open
+High
+Low
+Close
+AdjustedClose
+Volume
+DividendAmount
+SplitCoefficient

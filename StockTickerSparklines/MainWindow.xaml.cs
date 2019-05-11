@@ -180,6 +180,20 @@ namespace StockTickerSparklines
 
                     if ( tsrHistory != null )
                     {
+                        __intAbsLastCol = StoreTimeSeriesInWorksheet (
+                            intCurrRow ,                                        // int               pintOriginRow        The row index of the first cell in the range.
+                            __intAbsLastCol + ArrayInfo.NEXT_INDEX ,            // int               pintOriginCol        The column index of the first cell in the range.
+                            astrTimeSeriesLabels ,                              // int [ ]           pastrRowLabels       The string array of labels for the rows
+                            tsrHistory.Time_Series_Daily ,                      // Time_Series_Daily patsdTimeSeriesDaily The number of columns in the range.
+                            xlWork.ActiveSheet );                               // Worksheet         pwsActiveSheet       The worksheet to fill
+
+                        //  ----------------------------------------------------
+                        //  Repeat the AutoFit operation across the full sheet.
+                        //  ----------------------------------------------------
+
+                        AutoSetColumnWidths (
+                            xlWork ,
+                            __intAbsLastCol );
                     }   // if ( tsrHistory != null )
                 }   // for ( int intCurrentIssue = ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrentIssue < aintIssueRows.Length ; intCurrentIssue++ )
             }
@@ -274,6 +288,76 @@ namespace StockTickerSparklines
                 return timeSeriesResponse;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private void GetHistoryForSymbol
+
+
+        private static int StoreTimeSeriesInWorksheet (
+            int pintOriginRow ,
+            int pintOriginColumn ,
+            string [ ] pastrRowLabels ,
+            Time_Series_Daily [ ] patsdTimeSeriesDaily ,
+            Worksheet pwsActiveSheet )
+        {
+            int intFirstDataColumn = pintOriginColumn + ArrayInfo.NEXT_INDEX;
+
+            //  ----------------------------------------------------------------
+            //  Fill the label column.
+            //  ----------------------------------------------------------------
+
+            for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intJ < pastrRowLabels.Length ;
+                      intJ++ )
+            {
+                pwsActiveSheet.Cells [ pintOriginRow + intJ , pintOriginColumn ].Value = pastrRowLabels [ intJ ];
+            }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < pastrRowLabels.Length ; intJ++ )
+
+            //  ----------------------------------------------------------------
+            //  Before the next part can succeed, the number of columns in the
+            //  worksheet must be increased from its default initial value of
+            //  one hundred. The increase must account for the first data column
+            //  plus one, to allow for the sparkline.
+            //  ----------------------------------------------------------------
+
+            pwsActiveSheet.ColumnCount = intFirstDataColumn + patsdTimeSeriesDaily.Length + ArrayInfo.NEXT_INDEX;
+
+            //  ----------------------------------------------------------------
+            //  Beginning with the next column, fill down with field values from
+            //  an element of the Time_Series_Daily array, working across the
+            //  sheet until all Time_Series_Daily array elments have been used.
+            //  ----------------------------------------------------------------
+
+            for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intJ < patsdTimeSeriesDaily.Length ;
+                      intJ++ )
+            {
+                StoreTimeSeriesItemInWorksheet (
+                    patsdTimeSeriesDaily [ intJ ] ,         // Time_Series_Daily ptsdTimeSeriesDailyItem
+                    pintOriginRow ,                         // int               pintOriginRow
+                    intFirstDataColumn + intJ ,             // int               pintDestinationColumn
+                    pwsActiveSheet );                       // Worksheet         pwsActiveSheet
+            }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < patsdTimeSeriesDaily.Length ; intJ++ )
+
+            return pintOriginColumn + patsdTimeSeriesDaily.Length;
+        }   // private static int StoreTimeSeriesInWorksheet
+
+
+        private static void StoreTimeSeriesItemInWorksheet (
+            Time_Series_Daily ptsdTimeSeriesDailyItem ,
+            int pintOriginRow ,
+            int pintDestinationColumn ,
+            Worksheet pwsActiveSheet )
+        {
+            int intCurrRow = pintOriginRow;
+
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Activity_Date;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Open;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.High;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Low;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Close;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.AdjustedClose;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Volume;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.DividendAmount;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.SplitCoefficient;
+        }   // private static void StoreTimeSeriesItemInWorksheet
 
 
         private static int [ ] MakeRoomForHistory (
@@ -701,7 +785,7 @@ namespace StockTickerSparklines
             theme.Colors.Accent1 = Color.FromArgb ( 255 , 255 , 0 , 0 );
             theme.Colors.Accent2 = Color.FromArgb ( 255 , 0 , 255 , 0 );
 
-            var validChoices = DataValidator.CreateListValidator (
+            DataValidator validChoices = DataValidator.CreateListValidator (
                 string.Concat (
                     Properties.Resources.XLS_ROW_DISP_DISCARD ,
                     SpecialCharacters.COMMA ,
@@ -764,23 +848,33 @@ namespace StockTickerSparklines
                 }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
             }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < symbols.bestMatches.Length ; intRowIndex++ )
 
+            AutoSetColumnWidths (
+                xlWork ,
+                __intAbsLastCol );
+
+            this.xlWork.ActiveSheet.Protect = true;
+        }   // private void ShowSearchResults
+
+
+        private static void AutoSetColumnWidths (
+            GrapeCity.Windows.SpreadSheet.UI.GcSpreadSheet pwsWorkSheet ,
+            int pintAbsoluteLastColumn )
+        {
             //  --------------------------------------------------------
             //  Auto-fit the column widths.
             //  --------------------------------------------------------
 
             for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                  intColIndex < __intAbsLastCol ;
-                  intColIndex++ )
+                      intColIndex < pintAbsoluteLastColumn ;
+                      intColIndex++ )
             {
-                this.xlWork.View.AutoFitColumn ( intColIndex );
-            }   // // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < symbolInfos.Length ; intColIndex++ )
-
-            this.xlWork.ActiveSheet.Protect = true;
-        }   // private void ShowSearchResults
-#endregion  // Private Worker Methods
+                pwsWorkSheet.View.AutoFitColumn ( intColIndex );
+            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < pintAbsoluteLastColumn ; intColIndex++ )
+        }   // private static void AutoSetColumnWidths
+        #endregion  // Private Worker Methods
 
 
-#region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
+        #region Private Custom Instance Storage (Double underscores differentiate these from privates inherited from the base class.)
         private bool __fIsFirstPass = true;
 
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;

@@ -26,6 +26,13 @@ namespace StockTickerSparklines
     /// </summary>
     public partial class MainWindow : Window
     {
+        enum CellMovementDirection
+        {
+            Down ,
+            Up
+        }   // enum CellMovementDirection
+
+
         #region Constructor
         public MainWindow ( )
         {
@@ -152,15 +159,29 @@ namespace StockTickerSparklines
 
             try
             {
-                for ( int intCurrRow = ArrayInfo.ARRAY_SECOND_ELEMENT ;
-                          intCurrRow <= __intAbsLastRow ;
-                          intCurrRow++ )
+                string [ ] astrTimeSeriesLabels = WizardWrx.EmbeddedTextFile.Readers.LoadTextFileFromEntryAssembly (
+                    @"Time_Series_Daily.txt" );
+
+                int [ ] aintIssueRows = MakeRoomForHistory (
+                    xlWork.ActiveSheet ,
+                    __intAbsLastRow ,
+                    __intAbsLastCol ,
+                    ArrayInfo.IndexFromOrdinal ( astrTimeSeriesLabels.Length ) );
+
+                for ( int intCurrentIssue = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                          intCurrentIssue < aintIssueRows.Length ;
+                          intCurrentIssue++ )
                 {
-                    GetHistoryForSymbol (
+                    int intCurrRow = aintIssueRows [ intCurrentIssue ];         // This value is used twice.
+                    DailyTimeSeriesResponse tsrHistory = GetHistoryForSymbol (
                         xlWork.ActiveSheet.Cells [ intCurrRow , SYMBOL_COLUMN ].Text ,
                         intCurrRow ,
                         __intAbsLastCol );
-                }   // for ( int intCurrRow = ArrayInfo.ARRAY_SECOND_ELEMENT ; intCurrRow <= __intAbsLastRow ; intCurrRow++ )
+
+                    if ( tsrHistory != null )
+                    {
+                    }   // if ( tsrHistory != null )
+                }   // for ( int intCurrentIssue = ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrentIssue < aintIssueRows.Length ; intCurrentIssue++ )
             }
             catch ( Exception ex )
             {
@@ -169,7 +190,7 @@ namespace StockTickerSparklines
         }   // private void GetHistoryForSelectedSymbols
 
 
-        private void GetHistoryForSymbol (
+        private DailyTimeSeriesResponse GetHistoryForSymbol (
             string pstrSymbol ,
             int pintCurrRow ,
             int pintAbsLastCol )
@@ -213,6 +234,8 @@ namespace StockTickerSparklines
                         @"The stock ticker API returned the following error message: {0}" ,
                         error.ErrorMessage ) );             // Format Item 0: the following error message: {0}
                 txtMessage.Text = error.ErrorMessage;
+
+                return null;
             }   // TRUE (unanticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
             else
             {
@@ -246,13 +269,58 @@ namespace StockTickerSparklines
 
                 DailyTimeSeriesResponse timeSeriesResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DailyTimeSeriesResponse> (
                     strFixedUp_Pass_2 );
-
-                string [ ] astrAllMapItems = WizardWrx.EmbeddedTextFile.Readers.LoadTextFileFromEntryAssembly (
-                    @"Time_Series_Daily.txt" );
-
                 txtMessage.Text = Properties.Resources.MSG_HAVE_HISTORY;
+
+                return timeSeriesResponse;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private void GetHistoryForSymbol
+
+
+        private static int [ ] MakeRoomForHistory (
+            Worksheet pwsActiveWorkSheet ,
+            int pintAbsLastRow ,
+            int pintAbsLastCol ,
+            int pintAdditionalRowsNeeded )
+        {
+            int [ ] raintIndexOfIssueRows = new int [ pintAbsLastRow ];
+
+            int intOldIssueRow = ArrayInfo.ARRAY_SECOND_ELEMENT;
+
+            for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intJ < raintIndexOfIssueRows.Length ;
+                      intJ++ )
+            {
+                if ( intJ == ArrayInfo.ARRAY_FIRST_ELEMENT )
+                {
+                    raintIndexOfIssueRows [ intJ ] = intOldIssueRow;
+                }   // TRUE (The first line stays put.) block, if ( intJ == ArrayInfo.ARRAY_FIRST_ELEMENT )
+                else
+                {
+                    raintIndexOfIssueRows [ intJ ] = intOldIssueRow + ( pintAdditionalRowsNeeded * ArrayInfo.IndexFromOrdinal ( intOldIssueRow ) );
+                }   // FALSE (Subsequent lines move down.) block, if ( intJ == ArrayInfo.ARRAY_FIRST_ELEMENT )
+
+                intOldIssueRow++;
+            }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < raintIndexOfIssueRows.Length ; intJ++ )
+
+            //  ---------------------------------------------------------------
+            //  Row movement must be from the bottom up.
+            //  ---------------------------------------------------------------
+
+            for ( int intCurrRow = pintAbsLastRow ;
+                      intCurrRow > ArrayInfo.ARRAY_FIRST_ELEMENT ;
+                      intCurrRow-- )
+            {
+                MovePopulatedRow (
+                    intCurrRow ,                                                // int pintSourceRowIndex
+                    raintIndexOfIssueRows [ ArrayInfo.IndexFromOrdinal (        // int pintDestinationRowIndex
+                        intCurrRow ) ] ,                                        // The array of new locations is one subscript behind the array of cells.
+                    pintAbsLastCol ,                                            // int pintAbsLastCol
+                    CellMovementDirection.Down ,
+                    pwsActiveWorkSheet.Cells );                                 // Cells pwksCells
+            }   // for ( int intCurrRow = pintAbsLastRow ; intCurrRow > ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrRow-- )
+
+            return raintIndexOfIssueRows;
+        }   // private static int [ ] MakeRoomForHistory
 
 
         private string ApplyFixups_Pass_2 ( string pstrFixedUp_Pass_1 )
@@ -366,23 +434,40 @@ namespace StockTickerSparklines
         }   // private int FixThisItem
 
 
-        private void MovePopulatedRow (
+        private static void MovePopulatedRow (
             int pintSourceRowIndex ,
             int pintDestinationRowIndex ,
             int pintAbsLastCol ,
-            Cells pcells )
+            CellMovementDirection penmCellMovementDirection ,
+            Cells pwksCells )
         {
-            if ( pintSourceRowIndex > pintDestinationRowIndex )
+            if ( MoveIsSafe ( pintSourceRowIndex , pintDestinationRowIndex , penmCellMovementDirection ) )
             {
                 for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
                           intColIndex <= pintAbsLastCol ;
                           intColIndex++ )
                 {
-                    pcells [ pintDestinationRowIndex , intColIndex ].Value = pcells [ pintSourceRowIndex , intColIndex ].Value;
-                    pcells [ pintSourceRowIndex , intColIndex ].Value = null;
+                    pwksCells [ pintDestinationRowIndex , intColIndex ].Value = pwksCells [ pintSourceRowIndex , intColIndex ].Value;
+                    pwksCells [ pintSourceRowIndex , intColIndex ].Value = null;
                 }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= pintAbsLastCol ; intColIndex++ )
-            }   // if ( pintSourceRowIndex > pintDestinationRowIndex )
+            }   // if ( MoveIsSafe ( pintSourceRowIndex , pintDestinationRowIndex , penmCellMovementDirection ) )
         }   // private void MovePopulatedRow
+
+
+        private static bool MoveIsSafe (
+            int pintSourceRowIndex ,
+            int pintDestinationRowIndex ,
+            CellMovementDirection penmCellMovementDirection )
+        {
+            if ( penmCellMovementDirection == CellMovementDirection.Up )
+            {
+                return ( pintSourceRowIndex > pintDestinationRowIndex );
+            }   // TRUE (Rows are being moved UP to lower-numbered rows, closer to the top of the sheet.) block, if ( penmCellMovementDirection == CellMovementDirection.Up )
+            else
+            {
+                return ( pintDestinationRowIndex > pintSourceRowIndex );
+            }   // FALSE (Rows are being moved DOWN to higher-numbered rows, further from the top of the sheet.) block, if ( penmCellMovementDirection == CellMovementDirection.Up )
+        }   // private static bool MoveIsSafe
 
 
         private void PopulateRowFromSearchResult (
@@ -547,10 +632,11 @@ namespace StockTickerSparklines
                               intRowIndex++ )
                     {
                         MovePopulatedRow (
-                            keptRows [ intRowIndex ].RowIndex ,
-                            ArrayInfo.OrdinalFromIndex ( intRowIndex ) ,
-                            __intAbsLastCol ,
-                            xlWork.ActiveSheet.Cells );
+                            keptRows [ intRowIndex ].RowIndex ,                 // int pintSourceRowIndex
+                            ArrayInfo.OrdinalFromIndex ( intRowIndex ) ,        // int pintDestinationRowIndex
+                            __intAbsLastCol ,                                   // int pintAbsLastCol
+                            CellMovementDirection.Up ,
+                            xlWork.ActiveSheet.Cells );                         // Cells pwksCells
                     }   // for ( int intRowIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intRowIndex < keptRows.Count ; intRowIndex++ )
                 }   // if ( keptRows [ ArrayInfo.ARRAY_FIRST_ELEMENT ].RowIndex >= keptRows.Count )
 
@@ -699,8 +785,6 @@ namespace StockTickerSparklines
 
         private int __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
         private int __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
-
-        private System.ComponentModel.BackgroundWorker __workerThread = null;
 #endregion  // Private Custom Instance Storage
 
 

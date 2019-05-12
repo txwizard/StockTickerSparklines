@@ -129,6 +129,10 @@
   <data name="BTN_LBL_SEARCH" xml:space="preserve">
     <value>_Search</value>
   </data>
+  <data name="COL_LBL_SPARKLINE_GRAPHS" xml:space="preserve">
+    <value>Sparkline Graphs</value>
+    <comment>Label for the column that contains the sparklines</comment>
+  </data>
   <data name="ERRMSG_CORRUPTED_EMBBEDDED_RESOURCE_LABEL" xml:space="preserve">
     <value>The label row of internal resource {0} is invalid.{3}    Expected value = {1}{3}    Actual value   = {2}</value>
     <comment>The private LoadMap routine in the StockTickerEngine singleton uses this message to report a corrupted label row in its internal resource file.</comment>

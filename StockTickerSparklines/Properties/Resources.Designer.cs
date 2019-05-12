@@ -97,6 +97,15 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Sparkline Graphs.
+        /// </summary>
+        public static string COL_LBL_SPARKLINE_GRAPHS {
+            get {
+                return ResourceManager.GetString("COL_LBL_SPARKLINE_GRAPHS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The label row of internal resource {0} is invalid.{3}    Expected value = {1}{3}    Actual value   = {2}.
         /// </summary>
         public static string ERRMSG_CORRUPTED_EMBBEDDED_RESOURCE_LABEL {

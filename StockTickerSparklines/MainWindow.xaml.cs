@@ -155,7 +155,13 @@ namespace StockTickerSparklines
 
         private void GetHistoryForSelectedSymbols ( )
         {
-            const int SYMBOL_COLUMN = 1;
+            const int STOCK_SYMBOL_COLUMN = 1;
+            const int STOCK_SYMBOL_VIEWPORT_INDEX = 0;
+            const int STOCK_SYMBOL_VIEWPORT_WIDTH = 900;
+
+            const int SPARKLINE_VIEWPORT_INDEX = 1;
+            const int SPARKLINE_VIEWPORT_WIDTH = 300;
+            const int SPARKLINE_VIEWPORT_LEFT_COLUMN_INDEX = 111;
 
             try
             {
@@ -174,26 +180,52 @@ namespace StockTickerSparklines
                 {
                     int intCurrRow = aintIssueRows [ intCurrentIssue ];         // This value is used twice.
                     DailyTimeSeriesResponse tsrHistory = GetHistoryForSymbol (
-                        xlWork.ActiveSheet.Cells [ intCurrRow , SYMBOL_COLUMN ].Text ,
+                        xlWork.ActiveSheet.Cells [ intCurrRow , STOCK_SYMBOL_COLUMN ].Text ,
                         intCurrRow ,
                         __intAbsLastCol );
 
                     if ( tsrHistory != null )
                     {
-                        __intAbsLastCol = StoreTimeSeriesInWorksheet (
+                        xlWork.AddColumnViewport (
+                            STOCK_SYMBOL_VIEWPORT_INDEX ,
+                            STOCK_SYMBOL_VIEWPORT_WIDTH );
+                        xlWork.AddColumnViewport (
+                            SPARKLINE_VIEWPORT_INDEX ,
+                            SPARKLINE_VIEWPORT_WIDTH );
+                        xlWork.ColumnSplitBoxPolicy = GrapeCity.Windows.SpreadSheet.UI.SplitBoxPolicy.Always;
+                        xlWork.SetViewportLeftColumn (
+                            SPARKLINE_VIEWPORT_INDEX ,
+                            SPARKLINE_VIEWPORT_LEFT_COLUMN_INDEX );
+
+                        xlWork.Invalidate ( );
+
+                        //  ----------------------------------------------------
+                        //  The value of intFirstDetailColumn is equal to the
+                        //  sum of the current value of __intAbsLastCol, which
+                        //  is the last column used to report the stock issue
+                        //  query response, plus two, as follows:
+                        //
+                        //  1) The label column
+                        //  2) The first daily time series column
+                        //  ----------------------------------------------------
+
+                        int intFirstDetailColumn = __intAbsLastCol + MagicNumbers.PLUS_TWO;
+                        SparklineRowAssignments assignments = StoreTimeSeriesInWorksheet (
                             intCurrRow ,                                        // int               pintOriginRow        The row index of the first cell in the range.
                             __intAbsLastCol + ArrayInfo.NEXT_INDEX ,            // int               pintOriginCol        The column index of the first cell in the range.
                             astrTimeSeriesLabels ,                              // int [ ]           pastrRowLabels       The string array of labels for the rows
                             tsrHistory.Time_Series_Daily ,                      // Time_Series_Daily patsdTimeSeriesDaily The number of columns in the range.
                             xlWork.ActiveSheet );                               // Worksheet         pwsActiveSheet       The worksheet to fill
 
-                        //  ----------------------------------------------------
-                        //  Repeat the AutoFit operation across the full sheet.
-                        //  ----------------------------------------------------
+                        __intAbsLastCol = assignments.SparklineColumnIndex;
 
-                        AutoSetColumnWidths (
-                            xlWork ,
-                            __intAbsLastCol );
+                        int [ ] aintSparklineRowAssignments = assignments.GetArrayOfSparklineRows ( );
+                        CreateSparklines (
+                            intFirstDetailColumn ,                              // int                                              pintFirstDetailColumn
+                            tsrHistory.Time_Series_Daily.Length ,               // int                                              pintDetailColumnCount
+                            assignments.SparklineColumnIndex ,                  // int                                              pintSparklineColumnIndex
+                            aintSparklineRowAssignments ,                       // int [ ]                                          paintSparklineRowAssignments
+                            xlWork );                                           // GrapeCity.Windows.SpreadSheet.UI.GcSpreadSheet   pxlWork
                     }   // if ( tsrHistory != null )
                 }   // for ( int intCurrentIssue = ArrayInfo.ARRAY_FIRST_ELEMENT ; intCurrentIssue < aintIssueRows.Length ; intCurrentIssue++ )
             }
@@ -202,6 +234,63 @@ namespace StockTickerSparklines
                 ReportException ( ex );
             }   // catch ( Exception ex )
         }   // private void GetHistoryForSelectedSymbols
+
+
+        private static void CreateSparklines (
+            int pintFirstDetailColumn ,
+            int pintDetailColumnCount ,
+            int pintSparklineColumnIndex ,
+            int [ ] paintSparklineRowAssignments ,
+            GrapeCity.Windows.SpreadSheet.UI.GcSpreadSheet pxlWork )
+        {
+            pxlWork.ActiveSheet.Columns [ pintSparklineColumnIndex ].Width = 100;
+            pxlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , pintSparklineColumnIndex ].Value = Properties.Resources.COL_LBL_SPARKLINE_GRAPHS;
+
+            //MessageBox.Show (
+            //    string.Format (
+            //        "Sparkline Column Properties:{3}{3}Index = {0}{3}ActualVisible = {1}{3}Width = {2}" ,
+            //        pintSparklineColumnIndex ,
+            //        pxlWork.ActiveSheet.Columns [ pintSparklineColumnIndex ].ActualVisible ,
+            //        pxlWork.ActiveSheet.Columns [ pintSparklineColumnIndex ].Width ,
+            //        Environment.NewLine ) ,
+            //    App.ResourceAssembly.FullName ,
+            //    MessageBoxButton.OK ,
+            //    MessageBoxImage.Exclamation );
+
+            for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; 
+                      intJ < paintSparklineRowAssignments.Length ;
+                      intJ++ )
+            {
+                int intSparklineRow = paintSparklineRowAssignments [ intJ ];
+                CellRange range = new CellRange (
+                    intSparklineRow ,
+                    pintFirstDetailColumn ,
+                    MagicNumbers.PLUS_ONE ,
+                    pintDetailColumnCount );
+                SparklineSetting setting = new SparklineSetting ( );
+                setting.AxisColor = SystemColors.ActiveBorderColor;
+                setting.LineWeight = 1;
+                setting.ShowMarkers = true;
+                setting.MarkersColor = Color.FromRgb ( 255 , 0 , 128 );
+
+                setting.ShowFirst = true;
+                setting.ShowLow = true;
+                setting.ShowLast = true;
+
+                setting.HighMarkerColor = Color.FromRgb ( 49 , 78 , 111 );
+                setting.LastMarkerColor = Color.FromRgb ( 0 , 255 , 255 );
+                setting.LowMarkerColor = Color.FromRgb ( 255 , 255 , 0 );
+                setting.NegativeColor = Color.FromRgb ( 255 , 255 , 0 );
+                pxlWork.ActiveSheet.SetSparkline (
+                    intSparklineRow ,                       // int              row             = Row of the cell into which to insert the graph
+                    pintSparklineColumnIndex ,              // int              column          = Column of the cell into which to insert the graph
+                    range ,                                 // CellRange        dataRange       = Data range from which to draw the graph
+                    DataOrientation.Horizontal ,            // DataOrientation  dataOrientation = The data orientation
+                    SparklineType.Line ,                    // SparklineType    type            = The sparkline type to draw
+                    setting );                              // SparklineSetting setting         = The sparkline settings (colors and such)
+                pxlWork.Invalidate ( );                     // Force the worksheet to repaint itself.
+            }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < paintSparklineRowAssignments.Length ; intJ++ )
+        }   // private static void CreateSparklines
 
 
         private DailyTimeSeriesResponse GetHistoryForSymbol (
@@ -290,7 +379,7 @@ namespace StockTickerSparklines
         }   // private void GetHistoryForSymbol
 
 
-        private static int StoreTimeSeriesInWorksheet (
+        private static SparklineRowAssignments StoreTimeSeriesInWorksheet (
             int pintOriginRow ,
             int pintOriginColumn ,
             string [ ] pastrRowLabels ,
@@ -320,23 +409,36 @@ namespace StockTickerSparklines
             pwsActiveSheet.ColumnCount = intFirstDataColumn + patsdTimeSeriesDaily.Length + ArrayInfo.NEXT_INDEX;
 
             //  ----------------------------------------------------------------
+            //  Freeze the top row and the first and last columns.
+            //  ----------------------------------------------------------------
+
+            pwsActiveSheet.FrozenRowCount = 1;
+            pwsActiveSheet.FrozenColumnCount = 1;
+            pwsActiveSheet.FrozenTrailingColumnCount = 1;
+
+            //  ----------------------------------------------------------------
             //  Beginning with the next column, fill down with field values from
             //  an element of the Time_Series_Daily array, working across the
             //  sheet until all Time_Series_Daily array elments have been used.
             //  ----------------------------------------------------------------
+
+            SparklineRowAssignments assignments = new SparklineRowAssignments (
+                pintOriginColumn ,
+                patsdTimeSeriesDaily.Length );
 
             for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
                       intJ < patsdTimeSeriesDaily.Length ;
                       intJ++ )
             {
                 StoreTimeSeriesItemInWorksheet (
-                    patsdTimeSeriesDaily [ intJ ] ,         // Time_Series_Daily ptsdTimeSeriesDailyItem
-                    pintOriginRow ,                         // int               pintOriginRow
-                    intFirstDataColumn + intJ ,             // int               pintDestinationColumn
-                    pwsActiveSheet );                       // Worksheet         pwsActiveSheet
+                    patsdTimeSeriesDaily [ intJ ] ,         // Time_Series_Daily        ptsdTimeSeriesDailyItem
+                    pintOriginRow ,                         // int                      pintOriginRow
+                    intFirstDataColumn + intJ ,             // int                      pintDestinationColumn
+                    pwsActiveSheet ,                        // Worksheet                pwsActiveSheet
+                    assignments );                          // SparklineRowAssignments  passignments
             }   // for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ; intJ < patsdTimeSeriesDaily.Length ; intJ++ )
 
-            return pintOriginColumn + patsdTimeSeriesDaily.Length;
+            return assignments;
         }   // private static int StoreTimeSeriesInWorksheet
 
 
@@ -344,17 +446,39 @@ namespace StockTickerSparklines
             Time_Series_Daily ptsdTimeSeriesDailyItem ,
             int pintOriginRow ,
             int pintDestinationColumn ,
-            Worksheet pwsActiveSheet )
+            Worksheet pwsActiveSheet ,
+            SparklineRowAssignments passignments )
         {
             int intCurrRow = pintOriginRow;
 
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Activity_Date;
+
+            passignments.Open = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Open;
+
+            passignments.High = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.High;
+
+            passignments.Low = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Low;
+
+            passignments.Close = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Close;
+
+            passignments.AdjustedClose = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.AdjustedClose;
+
+            passignments.Adjustment = intCurrRow;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.GetAdjustment ( );
+
+            passignments.Volume = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Volume;
+
+            //  ----------------------------------------------------------------
+            //  The last two change too infrequently to warrant a graph, and the
+            //  final increment paves the way should another row be added.
+            //  ----------------------------------------------------------------
+
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.DividendAmount;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.SplitCoefficient;
         }   // private static void StoreTimeSeriesItemInWorksheet
@@ -865,11 +989,11 @@ namespace StockTickerSparklines
             //  --------------------------------------------------------
 
             for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
-                      intColIndex < pintAbsoluteLastColumn ;
+                      intColIndex <= pintAbsoluteLastColumn ;
                       intColIndex++ )
             {
                 pwsWorkSheet.View.AutoFitColumn ( intColIndex );
-            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex < pintAbsoluteLastColumn ; intColIndex++ )
+            }   // for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ; intColIndex <= pintAbsoluteLastColumn ; intColIndex++ )
         }   // private static void AutoSetColumnWidths
         #endregion  // Private Worker Methods
 

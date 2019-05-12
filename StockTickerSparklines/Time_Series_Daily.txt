@@ -4,6 +4,7 @@ High
 Low
 Close
 AdjustedClose
+Adjustment
 Volume
 DividendAmount
 SplitCoefficient

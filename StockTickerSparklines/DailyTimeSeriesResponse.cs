@@ -92,6 +92,27 @@ namespace StockTickerSparklines
         {
             get; set;
         }
-    }
 
+        public double GetAdjustment ( )
+        {
+            double dblClose;
+            double dblAdjustedClose;
+
+            if ( double.TryParse ( Close , out dblClose ) )
+            {
+                if ( double.TryParse ( AdjustedClose , out dblAdjustedClose ) )
+                {
+                    return dblAdjustedClose - dblClose;
+                }   // TRUE (anticipated outcome) block, if ( double.TryParse ( AdjustedClose , out dblAdjustedClose ) )
+                else
+                {
+                    return 0;
+                }   // FALSE (unanticipated outcome) block, if ( double.TryParse ( AdjustedClose , out dblAdjustedClose ) )
+            }   // TRUE (anticipated outcome) block, if ( double.TryParse ( Close , out dblClose ) )
+            else
+            {
+                return 0;
+            }   // FALSE (unanticipated outcome) block, if ( double.TryParse ( Close , out dblClose ) )
+        }   // public double GetAdjustment method
+    }   // ublic class Time_Series_Daily
 }   // partial namespace StockTickerSparklines

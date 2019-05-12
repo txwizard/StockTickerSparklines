@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BTN_LBL_EXPORT" xml:space="preserve">
+    <value>_Export to Excel</value>
+  </data>
   <data name="BTN_LBL_HISTORY" xml:space="preserve">
     <value>_Get History</value>
   </data>
@@ -159,6 +162,12 @@
     <value>Enter search string.</value>
     <comment>Prompt to display on form after reset</comment>
   </data>
+  <data name="MSG_EXCEL_SAVED_AS" xml:space="preserve">
+    <value>The worksheet shown above was saved into Microsoft Excel document {0}.</value>
+  </data>
+  <data name="MSG_EXCEL_SAVE_ABORTED" xml:space="preserve">
+    <value>Excel save was aborted by escaping the File Save dialog withut naming a file.</value>
+  </data>
   <data name="MSG_HAVE_HISTORY" xml:space="preserve">
     <value>History acquired for specified issues</value>
   </data>
@@ -190,6 +199,10 @@
   <data name="TPL_TICKER_SYMBOL_TOSTRING" xml:space="preserve">
     <value>Symbol = {0}, Issuer Name = {1}, Selected {2}</value>
     <comment>The ToString override method on TickerSymbol uses this template to represent the property values; this is how they appear in a watch window.</comment>
+  </data>
+  <data name="XLS_PROPERTY_NAME_IS_VALUE" xml:space="preserve">
+    <value>Value</value>
+    <comment>Evaluated in the CellChanged event delegate</comment>
   </data>
   <data name="XLS_R1_C1_LABEL" xml:space="preserve">
     <value>Disposition</value>

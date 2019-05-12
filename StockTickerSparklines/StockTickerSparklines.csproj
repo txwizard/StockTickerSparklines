@@ -96,6 +96,7 @@
     <Compile Include="DailyTimeSeriesResponse.cs" />
     <Compile Include="RestClient.cs" />
     <Compile Include="SparklineRowAssignments.cs" />
+    <Compile Include="StaticHelperMethods.cs" />
     <Compile Include="StockTickerEngine.cs" />
     <Compile Include="SymbolInfo.cs" />
     <Compile Include="TickerSymbolMatches.cs" />

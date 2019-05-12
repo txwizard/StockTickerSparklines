@@ -79,6 +79,12 @@
                     IsEnabled="False"
                     Content="{x:Static const:Resources.BTN_LBL_HISTORY}"
                     Margin="10,10,10,10" />
+            <Button x:Name="cmdExportToExcel"
+                    Style="{StaticResource buttonStyle}"
+                    Click="CmdExportToExcel_Click"
+                    IsEnabled="False"
+                    Content="{x:Static const:Resources.BTN_LBL_EXPORT}"
+                    Margin="10,10,10,10" />
             <Button x:Name="cmdResetForm"
                     Style="{StaticResource buttonStyle}"
                     Click="CmdResetForm_Click"

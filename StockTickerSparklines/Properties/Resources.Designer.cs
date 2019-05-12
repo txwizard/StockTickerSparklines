@@ -61,6 +61,15 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Export to Excel.
+        /// </summary>
+        public static string BTN_LBL_EXPORT {
+            get {
+                return ResourceManager.GetString("BTN_LBL_EXPORT", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Get History.
         /// </summary>
         public static string BTN_LBL_HISTORY {
@@ -169,6 +178,24 @@ namespace StockTickerSparklines.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Excel save was aborted by escaping the File Save dialog withut naming a file..
+        /// </summary>
+        public static string MSG_EXCEL_SAVE_ABORTED {
+            get {
+                return ResourceManager.GetString("MSG_EXCEL_SAVE_ABORTED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The worksheet shown above was saved into Microsoft Excel document {0}..
+        /// </summary>
+        public static string MSG_EXCEL_SAVED_AS {
+            get {
+                return ResourceManager.GetString("MSG_EXCEL_SAVED_AS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to History acquired for specified issues.
         /// </summary>
         public static string MSG_HAVE_HISTORY {
@@ -246,6 +273,15 @@ namespace StockTickerSparklines.Properties {
         public static string TPL_TICKER_SYMBOL_TOSTRING {
             get {
                 return ResourceManager.GetString("TPL_TICKER_SYMBOL_TOSTRING", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Value.
+        /// </summary>
+        public static string XLS_PROPERTY_NAME_IS_VALUE {
+            get {
+                return ResourceManager.GetString("XLS_PROPERTY_NAME_IS_VALUE", resourceCulture);
             }
         }
         

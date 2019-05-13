@@ -114,5 +114,37 @@ namespace StockTickerSparklines
                 return 0;
             }   // FALSE (unanticipated outcome) block, if ( double.TryParse ( Close , out dblClose ) )
         }   // public double GetAdjustment method
-    }   // ublic class Time_Series_Daily
+
+        internal static object ConvertToAppropriateType ( string pstrStringFromJSON )
+        {
+            DateTime dtmTemp;
+
+            if ( DateTime.TryParse ( pstrStringFromJSON , out dtmTemp ) )
+            {
+                return dtmTemp;
+            }   // TRUE (Input value is a DateTime.) block, if ( DateTime.TryParse ( pstrStringFromJSON , out dtmTemp ) )
+            else
+            {
+                long lngTemp;
+
+                if ( long.TryParse ( pstrStringFromJSON , out lngTemp ) )
+                {
+                    return lngTemp;
+                }   // TRUE (Input value is a Long Integer.) block, if ( long.TryParse ( pstrStringFromJSON , out lngTemp ) )
+                else
+                {
+                    double dblTemp;
+
+                    if ( double.TryParse ( pstrStringFromJSON , out dblTemp ) )
+                    {
+                        return dblTemp;
+                    }   // TRUE (Input value is a Double Precision floating point number.) block, if ( double.TryParse ( pstrStringFromJSON , out dblTemp ) )
+                    else
+                    {
+                        return pstrStringFromJSON;
+                    }   // FALSE (Input value is of another type) block, if ( double.TryParse ( pstrStringFromJSON , out dblTemp ) )
+                }   // FALSE (Input value is of another type.) block, if ( long.TryParse ( pstrStringFromJSON , out lngTemp ) )
+            }   // FALSE (Input value is of another type.) block, if ( DateTime.TryParse ( pstrStringFromJSON , out dtmTemp ) )
+        }   // internal static object ConvertToAppropriateType
+    }   // public class Time_Series_Daily
 }   // partial namespace StockTickerSparklines

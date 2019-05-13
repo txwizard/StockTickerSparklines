@@ -126,7 +126,6 @@ namespace StockTickerSparklines
             GetHistoryForSelectedSymbols ( );
 
             cmdExportToExcel.IsEnabled = true;
-
             Button button = sender as Button;
             button.IsEnabled = false;
 
@@ -149,30 +148,7 @@ namespace StockTickerSparklines
                                    MessageBoxButton.YesNo ,
                                    MessageBoxImage.Question ) == MessageBoxResult.Yes )
             {
-                __enmProcessingState = ProcessingState.ResettingForm;
-                txtSearchString.Text = SpecialStrings.EMPTY_STRING;
-
-                xlWork.ActiveSheet.Clear (
-                    ArrayInfo.ARRAY_FIRST_ELEMENT ,
-                    ArrayInfo.ARRAY_FIRST_ELEMENT ,
-                    __intAbsLastRow ,
-                    __intAbsLastCol );
-
-                __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
-                __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
-
-                cmdExportToExcel.IsEnabled = false;
-                cmdGetHistory.IsEnabled = false;
-                cmdPruneSelections.IsEnabled = false;
-                cmdResetForm.IsEnabled = false;
-
-                txtMessage.Text = Properties.Resources.MSG_ENTER_SEARCH_STRING;
-
-                xlWork.Invalidate ( );
-                xlWork.UpdateLayout ( );
-
-                txtSearchString.Focus ( );
-                __enmProcessingState = ProcessingState.Idle;
+                ResetForm ( );
             }   // if ( MessageBox.Show ( Properties.Resources.MSG_ARE_YOU_SURE , Title , MessageBoxButton.YesNo , MessageBoxImage.Question ) == MessageBoxResult.Yes )
         }   // private void CmdResetForm_Click event delegate
 
@@ -236,6 +212,48 @@ namespace StockTickerSparklines
 
 
         #region Private Instance Worker Methods
+        private string ApplyFixups_Pass_2 ( string pstrFixedUp_Pass_1 )
+        {   // This method references and updates instance member __fIsFirstPass.
+            const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";             // Ante: "TimeSeriesDaily": {
+            const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";          // Post: "Time_Series_Daily": [
+
+            const string END_BLOCK_ANTE = "}\n    }\n}";
+            const string END_BLOCK_POST = "}\n    ]\n}";
+
+            const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;       // Deduct one from the length to account for the first character occupying the position where copying begins.
+
+            __fIsFirstPass = true;                                              // Re-initialize the First Pass flag.
+
+            StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
+
+            builder1.Append (
+                pstrFixedUp_Pass_1.Replace (
+                    TSD_LABEL_ANTE ,
+                    TSD_LABEL_POST ) );
+            int intLastMatch = builder1.ToString ( ).IndexOf ( TSD_LABEL_POST )
+                               + TSD_LABEL_POST.Length
+                               - DOBULE_COUNTING_ADJUSTMENT;
+
+            while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
+            {
+                intLastMatch = FixNextItem (
+                    builder1 ,
+                    intLastMatch );
+            }   // while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
+
+            //  ----------------------------------------------------------------
+            //  Close the array by replacing the last French brace with a square
+            //  bracket.
+            //  ----------------------------------------------------------------
+
+            builder1.Replace (
+                END_BLOCK_ANTE ,
+                END_BLOCK_POST );
+
+            return builder1.ToString ( );
+        }   // private string ApplyFixups_Pass_2
+
+
         private void ClearPopulatedCellsInRow ( int pintRowIndex )
         {
             for ( int intColIndex = ArrayInfo.ARRAY_FIRST_ELEMENT ;
@@ -431,48 +449,6 @@ namespace StockTickerSparklines
                 return timeSeriesResponse;
             }   // FALSE (anticipated outcome) block, if ( RestClient.ErrorResponse.ResponseIsErrorMessage ( strResponse ) )
         }   // private DailyTimeSeriesResponse GetHistoryForSymbol
-
-
-        private string ApplyFixups_Pass_2 ( string pstrFixedUp_Pass_1 )
-        {   // This method references and updates instance member __fIsFirstPass.
-            const string TSD_LABEL_ANTE = "\"TimeSeriesDaily\": {";             // Ante: "TimeSeriesDaily": {
-            const string TSD_LABEL_POST = "\"Time_Series_Daily\" : [";          // Post: "Time_Series_Daily": [
-
-            const string END_BLOCK_ANTE = "}\n    }\n}";
-            const string END_BLOCK_POST = "}\n    ]\n}";
-
-            const int DOBULE_COUNTING_ADJUSTMENT = MagicNumbers.PLUS_ONE;       // Deduct one from the length to account for the first character occupying the position where copying begins.
-
-            __fIsFirstPass = true;                                              // Re-initialize the First Pass flag.
-
-            StringBuilder builder1 = new StringBuilder ( pstrFixedUp_Pass_1.Length * MagicNumbers.PLUS_TWO );
-
-            builder1.Append (
-                pstrFixedUp_Pass_1.Replace (
-                    TSD_LABEL_ANTE ,
-                    TSD_LABEL_POST ) );
-            int intLastMatch =   builder1.ToString ( ).IndexOf ( TSD_LABEL_POST ) 
-                               + TSD_LABEL_POST.Length
-                               - DOBULE_COUNTING_ADJUSTMENT;
-
-            while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
-            {
-                intLastMatch = FixNextItem (
-                    builder1 ,
-                    intLastMatch );
-            }   // while ( intLastMatch > ListInfo.INDEXOF_NOT_FOUND )
-
-            //  ----------------------------------------------------------------
-            //  Close the array by replacing the last French brace with a square
-            //  bracket.
-            //  ----------------------------------------------------------------
-
-            builder1.Replace (
-                END_BLOCK_ANTE ,
-                END_BLOCK_POST );
-
-            return builder1.ToString ( );
-        }   // private string ApplyFixups_Pass_2
 
 
         private int FixNextItem (
@@ -747,6 +723,35 @@ namespace StockTickerSparklines
                             Environment.NewLine                                 // Format Item 5: Platform-defined newline
                     } ) );
         }   // private void ReportException
+
+
+        private void ResetForm ( )
+        {
+            __enmProcessingState = ProcessingState.ResettingForm;
+            txtSearchString.Text = SpecialStrings.EMPTY_STRING;
+
+            xlWork.ActiveSheet.Clear (
+                ArrayInfo.ARRAY_FIRST_ELEMENT ,
+                ArrayInfo.ARRAY_FIRST_ELEMENT ,
+                __intAbsLastRow ,
+                __intAbsLastCol );
+
+            __intAbsLastRow = ArrayInfo.ARRAY_INVALID_INDEX;
+            __intAbsLastCol = ArrayInfo.ARRAY_INVALID_INDEX;
+
+            cmdExportToExcel.IsEnabled = false;
+            cmdGetHistory.IsEnabled = false;
+            cmdPruneSelections.IsEnabled = false;
+            cmdResetForm.IsEnabled = false;
+
+            txtMessage.Text = Properties.Resources.MSG_ENTER_SEARCH_STRING;
+
+            xlWork.Invalidate ( );
+            xlWork.UpdateLayout ( );
+
+            txtSearchString.Focus ( );
+            __enmProcessingState = ProcessingState.Idle;
+        }   // private void ResetForm
 
 
         private void ShowSearchResults (
@@ -1054,28 +1059,28 @@ namespace StockTickerSparklines
         {
             int intCurrRow = pintOriginRow;
 
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Activity_Date;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.Activity_Date );
 
             passignments.Open = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Open;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.Open );
 
             passignments.High = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.High;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.High );
 
             passignments.Low = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Low;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.Low );
 
             passignments.Close = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Close;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.Close );
 
             passignments.AdjustedClose = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.AdjustedClose;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.AdjustedClose );
 
             passignments.Adjustment = intCurrRow;
             pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.GetAdjustment ( );
 
             passignments.Volume = intCurrRow;
-            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = ptsdTimeSeriesDailyItem.Volume;
+            pwsActiveSheet.Cells [ intCurrRow++ , pintDestinationColumn ].Value = Time_Series_Daily.ConvertToAppropriateType ( ptsdTimeSeriesDailyItem.Volume );
 
             //  ----------------------------------------------------------------
             //  The last two change too infrequently to warrant a graph, and the

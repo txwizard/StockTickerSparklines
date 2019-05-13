@@ -25,7 +25,7 @@ namespace StockTickerSparklines
                 xlWork.SaveExcel (
                     dialog.FileName ,
                     ExcelFileFormat.XLSX ,
-                    ExcelSaveFlags.SaveBothCustomRowAndColumnHeaders );
+                    ExcelSaveFlags.NoFlagsSet );
                 return dialog.FileName;
             }   // TRUE (anticipated outcome) block, if ( ( bool ) dialog.ShowDialog ( phwndMain ) )
             else

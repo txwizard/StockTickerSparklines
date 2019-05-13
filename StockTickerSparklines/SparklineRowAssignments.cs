@@ -14,7 +14,7 @@ namespace StockTickerSparklines
 
         public SparklineRowAssignments ( int pintOriginColumn , int pintTimeSeriesItemCount )
         {
-            SparklineColumnIndex = pintOriginColumn + pintTimeSeriesItemCount + 1;
+            SparklineColumnIndex = pintOriginColumn + pintTimeSeriesItemCount;
         }
 
         public int Open

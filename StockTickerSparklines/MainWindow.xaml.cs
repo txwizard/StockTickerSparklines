@@ -296,7 +296,7 @@ namespace StockTickerSparklines
                             tsrHistory.Time_Series_Daily ,                      // Time_Series_Daily patsdTimeSeriesDaily The number of columns in the range.
                             xlWork.ActiveSheet );                               // Worksheet         pwsActiveSheet       The worksheet to fill
 
-                        __intAbsLastRow=UpdateLastRow ( astrTimeSeriesLabels , intCurrRow , __intAbsLastRow );
+                        __intAbsLastRow = UpdateLastRow ( astrTimeSeriesLabels , intCurrRow , __intAbsLastRow );
 
                         xlWork.ActiveSheet.Columns [ assignments.SparklineColumnIndex ].Width = SPARKLINE_COLUMN_WIDTH;
                         xlWork.ActiveSheet.Cells [ ArrayInfo.ARRAY_FIRST_ELEMENT , assignments.SparklineColumnIndex ].Value = Properties.Resources.COL_LBL_SPARKLINE_GRAPHS;
@@ -1026,7 +1026,7 @@ namespace StockTickerSparklines
             //  ----------------------------------------------------------------
 
             SparklineRowAssignments assignments = new SparklineRowAssignments (
-                pintOriginColumn ,
+                intFirstDataColumn ,
                 patsdTimeSeriesDaily.Length );
 
             for ( int intJ = ArrayInfo.ARRAY_FIRST_ELEMENT ;
